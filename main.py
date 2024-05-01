@@ -1,16 +1,17 @@
-from typing import Dict
 import random
+import os
+import logging
+import openai
 import holidays
-from datetime import date
+import country_converter as coco
+import gptutils as GptUtil
+from dotenv import load_dotenv
+from typing import Dict
+from datetime import date, datetime
+from wonderwords import RandomWord
 
-import holidays.calendars
-import holidays.constants
-import holidays.countries
-import holidays.holiday_base
-import holidays.observed_holiday_base
-import holidays.registry
-
-import holidays.locale
+load_dotenv()
+DALLE_KEY = os.getenv("DALLE_KEY")
 
 def getSpecialHoliday(date):
     """
@@ -19,11 +20,25 @@ def getSpecialHoliday(date):
     or a specialized holiday in country order priority (how they are ordered in the list),
     or none if there is no holiday.
     """
-    ##country_code_list = ['JP', 'US', 'KR', 'FR', 'DE']
+    most_promising_holiday = None
+
+    parsed_date = datetime.strptime(date, "%m-%d-%Y")
+    parsed_out_year = '{month}-{day}'.format(month=parsed_date.month, day=parsed_date.day)
     country_code_list = list(holidays.list_supported_countries().keys())
     holiday_dict: Dict[str, list[str]] = {}
-    for code in country_code_list:
-        holiday = holidays.country_holidays(code).get(date)
+    ## List of holidays that should be should be shown but for some reason is not in the holidays package.
+    special_holidays: Dict[str, tuple[str, list[str]]] = {
+        '8-31': ['Her Birthday', ['JP'] * 99], # Miku's birthday -> x99 countries will guarantee it always is chosen
+        '10-30': ['Mischief Night', ['US', 'CA', 'IE', 'UK']],
+        '10-31': ['Halloween', ['US', 'JP', 'CA', 'IE', 'UK', 'AU', 'NZ']]
+    }
+    
+    if (parsed_out_year in special_holidays):
+        special_day = special_holidays[parsed_out_year]
+        holiday_dict[special_day[0]] = special_day[1]
+        ## Adding a special day adds it to the list
+    
+    def add_to_holiday_dict(holiday: str):
         if (holiday):
             holiday_list = holiday.split(',') # multiple holidays separated by comma
             for unique_holiday in holiday_list:
@@ -32,8 +47,12 @@ def getSpecialHoliday(date):
                     holiday_dict[unique_holiday] += [code]
                 else:
                     holiday_dict[unique_holiday] = [code]
+        
+    for code in country_code_list:
+        holiday = holidays.country_holidays(code, observed=False).get(date)
+        add_to_holiday_dict(holiday=holiday)
+
     # Once the holiday dictionary is created, we must determine a suitable holiday.
-    most_promising_holiday = None
     top_country_count = 0
     ordered_holidays = sorted(holiday_dict.items(), key=lambda x: len(x[1]), reverse=True)
     if(len(ordered_holidays)):
@@ -74,15 +93,60 @@ def getSpecialHoliday(date):
 
     return most_promising_holiday
 
-def generate_random_date():
-    ## pass Custom Holiday for Miku's birthday
-    today = date.today()
-    print(today)
-    holiday = getSpecialHoliday('5-22-2024')
-    print(holiday)
+def generate_random_date(seed):
+    random.seed(seed)
+    d = random.randint(1, seed)
+    random_date = datetime.fromtimestamp(d).strftime('%m-%d-') + '2024'
+    print('Random Date: {rDate}'.format(rDate=random_date))
+    return random_date
+
+def get_starting_date(use_today: bool, specific_date=''):
+    if not (specific_date == ''):
+        print('Specific Date: {sDate}'.format(sDate=specific_date))
+        return specific_date
+    else:
+        return generate_random_date(int(datetime.now().strftime('%m%d%H%M%S'))) if use_today == False else date.today().strftime('%m-%d-%Y')
+
+def build_base_prompt(holiday: tuple[str, list[str]] | None):
+    main_prompt_action = ''
+    if (holiday):
+        # Generate art of hatsune miku
+        # Generate a twitter post by hatsune miku where she
+        if (len(holiday[1]) == 99): # Miku's birthday
+            country_mod = ''
+        elif (len(holiday[1]) > 2):
+            country_mod = '{} and {}'.format(', '.join(holiday[1][:-1]), holiday[1][:-1])
+        elif (len(holiday[1]) == 2):
+            country_mod = ' and '.join(holiday[1])
+        else:
+            country_mod = '{}'.format(holiday[1][0])
+        country_mod = 'all nations that observe it' if len(holiday[1]) > 3 and not len(holiday[1]) == 99 else country_mod
+        main_prompt_action = 'celebrating {holiday_name} with {country_modifier}.'.format(holiday_name=holiday[0], country_modifier=country_mod)
+    r = RandomWord()
+    action_verb = '{}ing'.format(r.word(include_parts_of_speech=['verb']))
+    adverb = r.word(regex='.*ly')
+    print('{adverb} {action_verb}'.format(adverb=adverb, action_verb=action_verb))
+    
+    print(GptUtil.ask_for_prompt())
+    
+    return {
+        'chatgpt': 'Generate a twitter post by Hatsune Miku where she is {}'.format(main_prompt_action),
+        'dalle': 'Generate art of Hatsune Miku where she is {}'.format(main_prompt_action)
+    }
 
 def start():
-    generate_random_date()
+    selected_date = get_starting_date(use_today=False, specific_date='') # specific_date used for debugging #6-18-2024 / Islamic
+        
+    holiday = getSpecialHoliday(selected_date)
+    if (holiday):
+        cc = coco.CountryConverter()
+        country_names = cc.convert(names=holiday[1], to='name_short')
+        holiday = (holiday[0], [country_names] if type(country_names) == type('') else country_names)
+    
+    base_prompt = build_base_prompt(holiday)
+    print(base_prompt['chatgpt'])
+    print(base_prompt['dalle'])
+    
     
 # HOLIDAY GENERATING TIPS
 # 'Generate Hatsune Miku celebrating X in Y in traditional clothing. Do not include any weaponry or political propaganda.'
