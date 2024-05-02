@@ -123,11 +123,10 @@ def build_base_prompt(holiday: tuple[str, list[str]] | None):
         country_mod = 'all nations that observe it' if len(holiday[1]) > 3 and not len(holiday[1]) == 99 else country_mod
         main_prompt_action = 'celebrating {holiday_name} with {country_modifier}.'.format(holiday_name=holiday[0], country_modifier=country_mod)
     r = RandomWord()
-    action_verb = '{}ing'.format(r.word(include_parts_of_speech=['verb']))
-    adverb = r.word(regex='.*ly')
-    print('{adverb} {action_verb}'.format(adverb=adverb, action_verb=action_verb))
     
-    print(GptUtil.ask_for_prompt())
+    random_words = [r.word(), r.word(), r.word()]
+    print("Helper nouns are: {}".format(' '.join(random_words)))
+    prompt_results = GptUtil.ask_for_prompt(random_words)
     
     return {
         'chatgpt': 'Generate a twitter post by Hatsune Miku where she is {}'.format(main_prompt_action),
@@ -150,5 +149,9 @@ def start():
     
 # HOLIDAY GENERATING TIPS
 # 'Generate Hatsune Miku celebrating X in Y in traditional clothing. Do not include any weaponry or political propaganda.'
+
+# Miku giving a weather report for a very specific town.
+# Miku posting photos at a previous sporting event.
+# Miku follows Elon Musk's flight location.
 
 start()
