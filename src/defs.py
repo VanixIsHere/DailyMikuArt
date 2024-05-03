@@ -5,6 +5,7 @@ MinorCountries = ['AU', 'BE', 'BR', 'CA', 'CN', 'DE', 'DK', 'EG', 'ES', 'FR', 'H
 AllWeightedCountries = MajorCountries + MinorCountries
 
 PostType = Enum('PostType', ['HOLIDAY', 'RANDOM', 'WEATHER', 'SPORTS'])
+DayType = Enum('DayType', ['HOLIDAY', 'BIRTHDAY'])
 
 class TwitterPost:
     def __init__(self, text, images):

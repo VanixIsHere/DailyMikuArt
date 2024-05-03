@@ -37,3 +37,12 @@ def handle_response(conversation_history: list[dict[str, str]], new_prompt: dict
     )
     response = chat_completion.choices[0].message.content
     return response if response != None else ''
+
+###################################
+#:::::::::::::::::::::::::::::::::#
+###################################
+
+def append_conversation(gpt_response):
+        if (gpt_response):
+            messages.append(new_assistant_message(gpt_response))
+        return gpt_response

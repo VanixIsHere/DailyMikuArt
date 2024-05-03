@@ -6,11 +6,12 @@ import os
 import random
 from datetime import date, datetime
 from dotenv import load_dotenv
-from .postGeneration.generate_posts import initiate_post_generation
+from .postGeneration.generate_posts import PostProps, initiate_post_generation
 from .postGeneration.holiday_post import get_special_holiday
 
 load_dotenv()
 DALLE_KEY = os.getenv("DALLE_KEY")
+GenerationAttempts = 1
 
 ###################################
 #:::::::::::::::::::::::::::::::::#
@@ -55,9 +56,10 @@ def start():
             weights = [0.8, 0.1, 0.1]
             chosen_post_type = random.choices(population, weights, k=1)[0]
         
-        initiate_post_generation(chosen_post_type)
+        post_props = PostProps(type=chosen_post_type, holiday=holiday)
+        initiate_post_generation(post_props)
         
-        if (successful_generation or attempts > 5):
+        if (successful_generation or attempts >= GenerationAttempts):
             break
         else:
             chosen_post_type = None
@@ -91,5 +93,3 @@ def start():
 # Miku giving a weather report for a very specific town.
 # Miku posting photos at a previous sporting event.
 # Miku follows Elon Musk's flight location.
-
-start()
