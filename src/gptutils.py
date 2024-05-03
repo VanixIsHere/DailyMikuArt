@@ -1,4 +1,4 @@
-import keys
+from . import keys
 from openai import OpenAI
 
 client = OpenAI(

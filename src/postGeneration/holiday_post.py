@@ -1,6 +1,6 @@
 import country_converter as coco
-from random import random
-from . import defs
+import random
+from .. import defs
 from datetime import datetime
 from typing import Dict
 

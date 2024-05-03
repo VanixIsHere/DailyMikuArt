@@ -1,8 +1,5 @@
-from . import defs
-import holiday_post
-import random_post
-import sports_post
-import weather_post
+from .. import defs
+from . import holiday_post, random_post, sports_post, weather_post
 
 ###################################
 #:::::::::::::::::::::::::::::::::#

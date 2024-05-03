@@ -1,13 +1,13 @@
 import csv
-import defs
+from . import defs
 import json
 import logging
 import os
 import random
 from datetime import date, datetime
 from dotenv import load_dotenv
-from postGeneration.generate_posts import initiate_post_generation
-from postGeneration.holiday_post import get_special_holiday
+from .postGeneration.generate_posts import initiate_post_generation
+from .postGeneration.holiday_post import get_special_holiday
 
 load_dotenv()
 DALLE_KEY = os.getenv("DALLE_KEY")
