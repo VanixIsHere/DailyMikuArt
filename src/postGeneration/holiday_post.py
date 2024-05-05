@@ -3,6 +3,7 @@ import random
 import country_converter as coco
 import json
 from .. import defs
+from ..gptutils import get_random_visual_art_prompt_intro
 from datetime import datetime
 from typing import Dict, Optional
 from pathlib import Path
@@ -56,7 +57,7 @@ def get_special_holiday(date):
                     def mapToName(n):
                         return n[0]
                     index = list(map(mapToName, holiday_list)).index(unique_holiday)
-                    holiday_list[index][1].append(country_code)
+                    holiday_list[index][1].append(country_code) # Update country list
                 except ValueError:
                     holiday_list.append((unique_holiday, [code], dayType))
         
@@ -99,7 +100,7 @@ def get_special_holiday(date):
             def not_a_problem(name: str): # TODO: Figure out a better way to support some of these holidays
                 # Manually removing weird holiday outcomes that don't play well with generating art.
                 full_name_removal_list = ['Substitute Holiday', 'Sunday', 'Juneteenth National Independence Day']
-                partial_name_removal_list = ['substituted from'] ## Example: Day off (substituted from 09/29/2024)
+                partial_name_removal_list = ['substituted from', 'King Bhumibol'] ## Example: Day off (substituted from 09/29/2024)
                 for partial_name in partial_name_removal_list:
                     if (partial_name in name):
                         return False
@@ -138,6 +139,8 @@ def modify_prompt_for_dalle(base_prompt: str, holiday: HolidayType):
     
     ROOT_DIR = Path(__file__).parent
     demonym_file = '{root}/wordList/demonym_dict.json'.format(root=ROOT_DIR)
+    demonym_count = 0
+    demonym_filler = None
     with open(demonym_file, 'r') as f:
         demonym_dict: Dict[str, str] = json.load(f)
         def reduceToDemonymList(array: list[str], n: str):
@@ -159,8 +162,9 @@ def modify_prompt_for_dalle(base_prompt: str, holiday: HolidayType):
             demonym_filler = ' {} '.format(demonym_list[0])
         clothing_prompt = "Ensure she is wearing culturally appropriate" + demonym_filler + "clothing for the event."
         prompt_sentences.append(clothing_prompt)
-        
-    prompt_sentences.append("Frame m")
+            
+        if (demonym_count == 1):
+            prompt_sentences.append("She should be in a recognizable location in {place} and there should be other people of {demonym} nationality in frame.".format(place=holiday[1][0], demonym=demonym_list[0]))
     
     return ' '.join(prompt_sentences)
     
@@ -185,7 +189,8 @@ def generate_post(holiday: HolidayType):
     main_prompt_action = 'celebrating {holiday_name} with {celebrate_with}.'.format(holiday_name=holiday[0], celebrate_with=celebrate_with)
     
     social_media_prompt = modify_prompt_for_social_media('Generate a twitter post by Hatsune Miku where she is {}'.format(main_prompt_action), holiday)
-    dalle_prompt = modify_prompt_for_dalle('Generate art of Hatsune Miku {}'.format(main_prompt_action), holiday)
+    dalle_prompt = modify_prompt_for_dalle('{introprompt} {mainprompt}'.format(introprompt=get_random_visual_art_prompt_intro(force_style=defs.Style.StudioArt), mainprompt=main_prompt_action), holiday)
+    # Forcing Holiday Posts to adopt 'Studio Art' styles all the time because they are they are the least problematic outcomes. Can't be celebrating post-apocalyptic Easter Sunday, ya know?
     print ({
         'chatgpt': social_media_prompt,
         'dalle': dalle_prompt
