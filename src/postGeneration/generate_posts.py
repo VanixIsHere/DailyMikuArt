@@ -1,23 +1,14 @@
 from .. import defs
 from . import holiday_post, random_post, sports_post, weather_post
-from .holiday_post import HolidayType
+from . dalle import initiate_dalle_generation
 import logging
 from typing import Optional
-
-###################################
-#:::::::::::::::::::::::::::::::::#
-###################################
-
-class PostProps:
-    def __init__(self, type: defs.PostType, holiday: Optional[HolidayType]):
-        self.type = type
-        self.holiday = holiday
         
 ###################################
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def initiate_post_generation(props: PostProps):
+def initiate_post_generation(props: defs.PostProps):
     print('Initiating prompt generation for {}'.format(props.type))
     logging.info('Initiating prompt generation for {postType}.'.format(postType=props.type))
     postData = None
@@ -30,4 +21,9 @@ def initiate_post_generation(props: PostProps):
             postData = weather_post.generate_post()
         case defs.PostType.SPORTS:
             postData = sports_post.generate_post()
+            
+    if (postData.artPrompt):
+        fileOutput = ''
+        initiate_dalle_generation(props, postData.artPrompt)
+
     return postData

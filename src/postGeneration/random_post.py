@@ -1,4 +1,5 @@
 from .. import gptutils as gpt
+from .. import defs
 
 ###################################
 #:::::::::::::::::::::::::::::::::#
@@ -101,4 +102,5 @@ def traveling_the_world_prompt(include_words: list[str]):
 ###################################
 
 def generate_post():
-    return None
+    data = defs.PostData(socialMediaPrompt='', artPrompt='')
+    return data

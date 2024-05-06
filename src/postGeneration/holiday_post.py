@@ -15,13 +15,6 @@ import holidays
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-HolidayDictionary = Dict[str, list[str]]
-HolidayType = tuple[str, list[str], defs.DayType]
-
-###################################
-#:::::::::::::::::::::::::::::::::#
-###################################
-
 def get_special_holiday(date):
     """
     Gets a list of holidays that are celebrated from a handful of selected countries.
@@ -29,14 +22,14 @@ def get_special_holiday(date):
     or a specialized holiday in country order priority (how they are ordered in the list),
     or none if there is no holiday.
     """
-    most_promising_holiday: HolidayType | None = None
+    most_promising_holiday: defs.HolidayType | None = None
 
     parsed_date = datetime.strptime(date, "%m-%d-%Y")
     parsed_out_year = '{month}-{day}'.format(month=parsed_date.month, day=parsed_date.day)
     country_code_list = list(holidays.list_supported_countries().keys())
-    holiday_list: list[HolidayType] = []
+    holiday_list: list[defs.HolidayType] = []
     ## List of holidays that should be should be shown but for some reason is not in the holidays package.
-    special_holidays: Dict[str, HolidayType] = {
+    special_holidays: Dict[str, defs.HolidayType] = {
         '8-31': ['Her Birthday', defs.AllWeightedCountries, defs.DayType.BIRTHDAY], # Miku's birthday -> x99 countries will guarantee it always is chosen
         '10-30': ['Mischief Night', ['US', 'CA', 'IE', 'UK'], defs.DayType.HOLIDAY],
         '10-31': ['Halloween', ['US', 'JP', 'CA', 'IE', 'UK', 'AU', 'NZ'], defs.DayType.HOLIDAY]
@@ -89,7 +82,7 @@ def get_special_holiday(date):
         # This is to help prioritize traditional Japanese holidays while avoiding potentially problematic preferences (IE prioritizing a different religion over Miku's cultural background)
         has_japan_holiday = bool(next((x for x in ordered_holidays if 'JP' in x[1]), False))
         
-        def filter_holidays(holiday: HolidayType):
+        def filter_holidays(holiday: defs.HolidayType):
             country_count = len(holiday[1])
             holiday_specific_cutoff = 2 # Essentially filtering out unless holiday_specific_cutoff is < 1.
             if not (has_japan_holiday):
@@ -132,7 +125,7 @@ def get_special_holiday(date):
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def modify_prompt_for_social_media(base_prompt: str, holiday: HolidayType):
+def modify_prompt_for_social_media(base_prompt: str, holiday: defs.HolidayType):
     logging.info('Modifying base prompt for social media text.')
     prompt_sentences: list[str] = [base_prompt]
     return ' '.join(prompt_sentences)
@@ -141,7 +134,7 @@ def modify_prompt_for_social_media(base_prompt: str, holiday: HolidayType):
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def modify_prompt_for_dalle(base_prompt: str, holiday: HolidayType):
+def modify_prompt_for_dalle(base_prompt: str, holiday: defs.HolidayType):
     logging.info('Modifying base prompt for art generation.')
     prompt_sentences: list[str] = [base_prompt]
     
@@ -180,7 +173,7 @@ def modify_prompt_for_dalle(base_prompt: str, holiday: HolidayType):
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def generate_post(holiday: HolidayType):
+def generate_post(holiday: defs.HolidayType):
     country_list = holiday[1]
     country_count = len(country_list)
     logging.info('Begin generation for the holiday of "{holiday}" with {countryCount} participating: {countries}'.format(holiday=holiday[0], countryCount=country_count, countries=holiday[1]))
@@ -204,7 +197,6 @@ def generate_post(holiday: HolidayType):
     dalle_prompt = modify_prompt_for_dalle('{introprompt} {mainprompt}'.format(introprompt=get_random_visual_art_prompt_intro(force_style=defs.Style.StudioArt), mainprompt=main_prompt_action), holiday)
     logging.info('Art generation prompt generated: "{prompt}"'.format(prompt=dalle_prompt))
 
-    print ({
-        'chatgpt': social_media_prompt,
-        'dalle': dalle_prompt
-    })
+    data = defs.PostData(socialMediaPrompt=social_media_prompt, artPrompt=dalle_prompt)
+    print (data)
+    return data
