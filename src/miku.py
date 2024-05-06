@@ -1,3 +1,4 @@
+import asyncio
 import csv
 from pathlib import Path
 from . import defs
@@ -14,7 +15,7 @@ from .postGeneration.holiday_post import get_special_holiday
 
 load_dotenv()
 DALLE_KEY = os.getenv("DALLE_KEY")
-GenerationAttempts = 1
+GenerationAttempts = 3
 
 ###################################
 #:::::::::::::::::::::::::::::::::#
@@ -68,12 +69,12 @@ def get_starting_date(use_today: bool, specific_date=''):
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def start():
+async def start():
     ROOT_DIR = Path(__file__).parent
     history_folder = '{root}\\history'.format(root=ROOT_DIR)
     if not os.path.exists(history_folder):
         os.makedirs(history_folder)
-    selected_date = get_starting_date(use_today=False, specific_date='') # specific_date used for debugging #6-18-2024 / Abrahamic
+    selected_date = get_starting_date(use_today=False, specific_date='3-17-2024') # specific_date used for debugging #6-18-2024 / Abrahamic
     holiday = get_special_holiday(selected_date)
     
     chosen_post_type: defs.PostType = defs.PostType.HOLIDAY if holiday else None
@@ -102,7 +103,12 @@ def start():
             chosen_post_type = random.choices(population, weights, k=1)[0]
         
         post_props = defs.PostProps(type=chosen_post_type, date=selected_date, folderName=date_folder, attempt=attempts, holiday=holiday)
-        initiate_post_generation(post_props)
+        image_successful = await initiate_post_generation(post_props)
+        if (image_successful):
+            print('Image generated successfully on attempt #{}.'.format(attempts))
+            successful_generation = True
+        else:
+            print('Image failed to generate on attempt #{}.'.format(attempts))
         
         if (successful_generation or attempts >= GenerationAttempts):
             break

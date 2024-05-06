@@ -1,3 +1,4 @@
+import asyncio
 from .. import defs
 from . import holiday_post, random_post, sports_post, weather_post
 from . dalle import initiate_dalle_generation
@@ -8,7 +9,7 @@ from typing import Optional
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def initiate_post_generation(props: defs.PostProps):
+async def initiate_post_generation(props: defs.PostProps):
     print('Initiating prompt generation for {}'.format(props.type))
     logging.info('Initiating prompt generation for {postType}.'.format(postType=props.type))
     postData = None
@@ -24,6 +25,6 @@ def initiate_post_generation(props: defs.PostProps):
             
     if (postData.artPrompt):
         fileOutput = ''
-        initiate_dalle_generation(props, postData.artPrompt)
+        return await initiate_dalle_generation(props, postData.artPrompt)
 
-    return postData
+    return False

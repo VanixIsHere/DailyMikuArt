@@ -1,3 +1,4 @@
+import asyncio
 from src import miku
 
-miku.start()
+asyncio.run(miku.start())
