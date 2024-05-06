@@ -1,9 +1,12 @@
 import csv
+from pathlib import Path
 from . import defs
 import json
 import logging
+import logging.config
 import os
 import random
+import re
 from datetime import date, datetime
 from dotenv import load_dotenv
 from .postGeneration.generate_posts import PostProps, initiate_post_generation
@@ -12,6 +15,32 @@ from .postGeneration.holiday_post import get_special_holiday
 load_dotenv()
 DALLE_KEY = os.getenv("DALLE_KEY")
 GenerationAttempts = 1
+
+###################################
+#:::::::::::::::::::::::::::::::::#
+###################################
+
+def date_to_filename(date: str):
+    date_array = re.split(r'[\s|-]', date) # Expecting MM-DD-YYYY
+    try:
+        assert len(date_array) == 3
+        return '{year}-{month}-{day}'.format(year=date_array[2], month=date_array[0], day=date_array[1])
+    except AssertionError:
+        print('Error while converting date to filename form.')
+        
+###################################
+#:::::::::::::::::::::::::::::::::#
+###################################
+    
+
+def filename_to_date(filename: str):
+    filename_array = re.split(r'[\s|-]', filename) # Expecting YYYY-MM-DD
+    try:
+        assert len(filename_array) == 3
+        return '{month}-{day}-{year}'.format(month=filename_array[1], day=filename_array[2], year=filename_array[0])
+    except AssertionError:
+        print('Error while converting filename to date form.')
+    
 
 ###################################
 #:::::::::::::::::::::::::::::::::#
@@ -40,6 +69,10 @@ def get_starting_date(use_today: bool, specific_date=''):
 ###################################
 
 def start():
+    ROOT_DIR = Path(__file__).parent
+    history_folder = '{root}/history'.format(root=ROOT_DIR)
+    if not os.path.exists(history_folder):
+        os.makedirs(history_folder)
     selected_date = get_starting_date(use_today=False, specific_date='') # specific_date used for debugging #6-18-2024 / Abrahamic
     holiday = get_special_holiday(selected_date)
     
@@ -49,6 +82,17 @@ def start():
     
     while True:
         attempts += 1
+
+        date_folder = '{historyFolder}/{folderName}'.format(historyFolder=history_folder, folderName=date_to_filename(selected_date))
+        date_logging_file = '{folder}/miku_output.log'.format(folder=date_folder)
+        if not os.path.exists(date_folder):
+            os.makedirs(date_folder)
+        logging.basicConfig(
+            filename=date_logging_file,
+            level=logging.INFO,
+            force=True
+        )
+        logging.info('Starting attempt {attempt} for date {date}.'.format(attempt=attempts, date=selected_date))
 
         if (chosen_post_type != defs.PostType.HOLIDAY):
             # Select a post type at random with weights.
@@ -67,28 +111,6 @@ def start():
     ## base_prompt = build_base_prompt(holiday)
     ## print(base_prompt['chatgpt'])
     ## print(base_prompt['dalle'])
-    
-
-    ''' 
-    supported_countries = cc.convert(names=list(holidays.list_supported_countries().keys()), to='name_short')
-    
-    with open('./wordList/demonyms.csv', mode='r', encoding="utf8") as infile:
-        reader = csv.reader(infile)
-        with open('./demonym_dict.json', mode='w', encoding="utf8") as outfile:
-            whole_dict = dict(('{}'.format(rows[1]),rows[0]) for rows in reader)
-            partial_dict = dict()
-            for country in supported_countries:
-                try:
-                    new_entry = (country, whole_dict[country])
-                    partial_dict.update([new_entry])
-                except KeyError:
-                    continue
-            outfile.write(str(partial_dict))
-    '''
-    
-    
-# HOLIDAY GENERATING TIPS
-# 'Generate Hatsune Miku celebrating X in Y in traditional clothing. Do not include any weaponry or political propaganda.'
 
 # Miku giving a weather report for a very specific town.
 # Miku posting photos at a previous sporting event.

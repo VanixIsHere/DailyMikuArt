@@ -1,6 +1,7 @@
 from .. import defs
 from . import holiday_post, random_post, sports_post, weather_post
 from .holiday_post import HolidayType
+import logging
 from typing import Optional
 
 ###################################
@@ -18,6 +19,7 @@ class PostProps:
 
 def initiate_post_generation(props: PostProps):
     print('Initiating prompt generation for {}'.format(props.type))
+    logging.info('Initiating prompt generation for {postType}.'.format(postType=props.type))
     postData = None
     match props.type:
         case defs.PostType.HOLIDAY:

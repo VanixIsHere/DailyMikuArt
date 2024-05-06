@@ -7,6 +7,7 @@ from ..gptutils import get_random_visual_art_prompt_intro
 from datetime import datetime
 from typing import Dict, Optional
 from pathlib import Path
+import logging
 
 import holidays
 
@@ -41,9 +42,11 @@ def get_special_holiday(date):
         '10-31': ['Halloween', ['US', 'JP', 'CA', 'IE', 'UK', 'AU', 'NZ'], defs.DayType.HOLIDAY]
     }
     
+    logging.info('Searching for holidays that exist on {date}.'.format(date=date))
+    
     if (parsed_out_year in special_holidays):
         special_day = special_holidays[parsed_out_year]
-        #holiday_dict[special_day[0]] = special_day[1]
+        #logging.info('FOUND: {holidayName} with {countryCount} participating: {countries}'.format(holidayName=holiday[0], countryCount=len(holiday[1]), countries=holiday[1]))
         holiday_list.append(special_day)
         ## Adding a special day adds it to the list
     
@@ -67,6 +70,9 @@ def get_special_holiday(date):
 
     # Once the holiday dictionary is created, we must determine a suitable holiday.
     top_country_count = 0
+    
+    # for holiday in holiday_list:
+        # logging.info('FOUND: {holidayName} with {countryCount} participating: {countries}'.format(holidayName=holiday[0], countryCount=len(holiday[1]), countries=holiday[1]))
     
     ordered_holidays = sorted(holiday_list, key=lambda x: len(x[1]), reverse=True)
     if(len(ordered_holidays)):
@@ -127,6 +133,7 @@ def get_special_holiday(date):
 ###################################
 
 def modify_prompt_for_social_media(base_prompt: str, holiday: HolidayType):
+    logging.info('Modifying base prompt for social media text.')
     prompt_sentences: list[str] = [base_prompt]
     return ' '.join(prompt_sentences)
 
@@ -135,6 +142,7 @@ def modify_prompt_for_social_media(base_prompt: str, holiday: HolidayType):
 ###################################
 
 def modify_prompt_for_dalle(base_prompt: str, holiday: HolidayType):
+    logging.info('Modifying base prompt for art generation.')
     prompt_sentences: list[str] = [base_prompt]
     
     ROOT_DIR = Path(__file__).parent
@@ -175,6 +183,7 @@ def modify_prompt_for_dalle(base_prompt: str, holiday: HolidayType):
 def generate_post(holiday: HolidayType):
     country_list = holiday[1]
     country_count = len(country_list)
+    logging.info('Begin generation for the holiday of "{holiday}" with {countryCount} participating: {countries}'.format(holiday=holiday[0], countryCount=country_count, countries=holiday[1]))
     day_type = holiday[2]
     if (day_type == defs.DayType.BIRTHDAY): # Miku's birthday
         celebrate_with = 'her fans and music producers'
@@ -189,8 +198,12 @@ def generate_post(holiday: HolidayType):
     main_prompt_action = 'celebrating {holiday_name} with {celebrate_with}.'.format(holiday_name=holiday[0], celebrate_with=celebrate_with)
     
     social_media_prompt = modify_prompt_for_social_media('Generate a twitter post by Hatsune Miku where she is {}'.format(main_prompt_action), holiday)
-    dalle_prompt = modify_prompt_for_dalle('{introprompt} {mainprompt}'.format(introprompt=get_random_visual_art_prompt_intro(force_style=defs.Style.StudioArt), mainprompt=main_prompt_action), holiday)
+    logging.info('Social media prompt generated: "{prompt}"'.format(prompt=social_media_prompt))
+
     # Forcing Holiday Posts to adopt 'Studio Art' styles all the time because they are they are the least problematic outcomes. Can't be celebrating post-apocalyptic Easter Sunday, ya know?
+    dalle_prompt = modify_prompt_for_dalle('{introprompt} {mainprompt}'.format(introprompt=get_random_visual_art_prompt_intro(force_style=defs.Style.StudioArt), mainprompt=main_prompt_action), holiday)
+    logging.info('Art generation prompt generated: "{prompt}"'.format(prompt=dalle_prompt))
+
     print ({
         'chatgpt': social_media_prompt,
         'dalle': dalle_prompt
