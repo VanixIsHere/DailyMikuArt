@@ -1,3 +1,7 @@
+import json
+from pathlib import Path
+import random
+from typing import Dict
 from .. import gptutils as gpt
 from .. import defs
 
@@ -102,5 +106,16 @@ def traveling_the_world_prompt(include_words: list[str]):
 ###################################
 
 def generate_post():
+    ROOT_DIR = Path(__file__).parent
+    locations_file = '{root}/wordList/locations.json'.format(root=ROOT_DIR)
+    items_file = '{root}/wordList/items.json'.format(root=ROOT_DIR)
+    with open(locations_file, 'r', encoding='UTF-8') as location_f:
+        with open(items_file, 'r', encoding='UTF-8') as item_f:
+            locations_dict: Dict[str, str] = json.load(location_f)
+            items_dict = json.load(item_f)
+            random_item = random.choice(items_dict) or 'cringe'
+            random_loc_type = random.choice(locations_dict)
+            random_loc = random.choice(random_loc_type['list'])
+            print("{} : {}".format(random_item, random_loc))
     data = defs.PostData(socialMediaPrompt='', artPrompt='')
     return data

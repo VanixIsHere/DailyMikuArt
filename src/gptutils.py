@@ -92,9 +92,10 @@ def get_random_visual_art_prompt_intro(force_style: Optional[Style]):
             { 'name': 'Bill Watterson', 'weight': 0.08 },
             { 'name': 'Disney', 'weight': 0.08 },
             { 'name': 'Pixar', 'weight': 0.08 },
-            { 'name': 'Sanrio and Friends', 'weight': 0.22 },
+            { 'name': 'Sanrio and Friends', 'weight': 0.18 },
             { 'name': 'Studio Trigger', 'weight': 0.16 },
-            { 'name': 'Studio Mappa', 'weight': 0.16 }
+            { 'name': 'Studio Mappa', 'weight': 0.16 },
+            { 'name': 'Akira Toriyama', 'weight': 0.08 }
         ]
         random_studio_art_style = ' in the style of {}'.format(random.choices([d['name'] for d in studio_art_options], [d['weight'] for d in studio_art_options], k=1)[0])
         

@@ -99,7 +99,7 @@ def get_special_holiday(date):
             def not_a_problem(name: str): # TODO: Figure out a better way to support some of these holidays
                 # Manually removing weird holiday outcomes that don't play well with generating art.
                 full_name_removal_list = ['Substitute Holiday', 'Sunday', 'Juneteenth National Independence Day']
-                partial_name_removal_list = ['substituted from', 'King Bhumibol'] ## Example: Day off (substituted from 09/29/2024)
+                partial_name_removal_list = ['substituted from', 'King Bhumibol', 'estimated'] ## Example: Day off (substituted from 09/29/2024)
                 for partial_name in partial_name_removal_list:
                     if (partial_name in name):
                         return False
@@ -194,7 +194,7 @@ def generate_post(holiday: defs.HolidayType):
     logging.info('Social media prompt generated: "{prompt}"'.format(prompt=social_media_prompt))
 
     # Forcing Holiday Posts to adopt 'Studio Art' styles all the time because they are they are the least problematic outcomes. Can't be celebrating post-apocalyptic Easter Sunday, ya know?
-    dalle_prompt = modify_prompt_for_dalle('{introprompt} {mainprompt}'.format(introprompt=get_random_visual_art_prompt_intro(force_style=defs.Style.StudioArt), mainprompt=main_prompt_action), holiday)
+    dalle_prompt = modify_prompt_for_dalle('{introprompt} {mainprompt}'.format(introprompt=get_random_visual_art_prompt_intro(force_style=None), mainprompt=main_prompt_action), holiday)
     logging.info('Art generation prompt generated: "{prompt}"'.format(prompt=dalle_prompt))
 
     data = defs.PostData(socialMediaPrompt=social_media_prompt, artPrompt=dalle_prompt)

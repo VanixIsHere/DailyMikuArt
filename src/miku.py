@@ -15,7 +15,7 @@ from .postGeneration.holiday_post import get_special_holiday
 
 load_dotenv()
 DALLE_KEY = os.getenv("DALLE_KEY")
-GenerationAttempts = 3
+GenerationAttempts = 1
 
 ###################################
 #:::::::::::::::::::::::::::::::::#
@@ -74,7 +74,7 @@ async def start():
     history_folder = '{root}\\history'.format(root=ROOT_DIR)
     if not os.path.exists(history_folder):
         os.makedirs(history_folder)
-    selected_date = get_starting_date(use_today=False, specific_date='3-17-2024') # specific_date used for debugging #6-18-2024 / Abrahamic
+    selected_date = get_starting_date(use_today=False, specific_date='6-23-2024') # specific_date used for debugging #6-18-2024 / Abrahamic
     holiday = get_special_holiday(selected_date)
     
     chosen_post_type: defs.PostType = defs.PostType.HOLIDAY if holiday else None
@@ -99,7 +99,7 @@ async def start():
         if (chosen_post_type != defs.PostType.HOLIDAY):
             # Select a post type at random with weights.
             population = [defs.PostType.RANDOM, defs.PostType.WEATHER, defs.PostType.SPORTS]
-            weights = [0.8, 0.1, 0.1]
+            weights = [10.8, 0.1, 0.1]
             chosen_post_type = random.choices(population, weights, k=1)[0]
         
         post_props = defs.PostProps(type=chosen_post_type, date=selected_date, folderName=date_folder, attempt=attempts, holiday=holiday)
