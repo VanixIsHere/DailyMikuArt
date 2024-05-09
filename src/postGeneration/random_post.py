@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 import random
 from typing import Dict
@@ -9,113 +10,102 @@ from .. import defs
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def traveling_the_world_prompt(include_words: list[str]):
-    ## To properly travel the world, Miku needs a bit of information generated for her to get inspiration for what to do.
-    ## She may be provided a country to start in. If provided a country, the proper climate should be realized.
-    
-    word_topics = ''
-    if (len(include_words) == 1):
-        word_topics = "'{}'".format(include_words[0])
-    if (len(include_words) == 2):
-        word_topics = "'{}' and '{}'".format(include_words[0], include_words[1])
-    if (len(include_words) > 2):
-        quoted_words = list(map(lambda x: "'{}'".format(x), include_words))
-        word_topics = '{} and {}'.format(', '.join(quoted_words[:-1]), quoted_words[-1])
-    print(word_topics)
-    system_context = "You are a text generating entity."
-    word_generation_instruction = """You will generate 5 random words to output as a JSON object, with the keys being 'Place', 'Thing', 'Verb', Adjective', and 'Adverb'.
-    Each random word should be the same part of speech as it's associated key in JSON object. For example, the key 'Verb' should be a word that is linguistically a verb.
-    The key for 'Place' should be one of the following: a man-made location, a service, an attraction, a famous monument, a natural location, or other unique spot. Do not use anything to help generate a location.
-    The key for 'Thing' can be any common mundane item with a focus on specificity.
-    For the 'Adverb' word, it should be an adverb that modifies the 'Verb' word in a realistic way.
-    The 'Adjective' should modify the 'Thing' noun.
-    Be creative. Mundane and uncommon words are good. Avoid sexual words.
-    """
-    if (word_topics):
-        word_topics = "The theme of the words can relate to: {}".format(word_topics)
+def generate_social_media_post(art_prompt: str):
+    system_context = "You are a generating entity capable of converting art prompts into personable Twitter posts."
 
     messages = [{
         "role": "system",
         "content": system_context,
     }, {
         "role": "assistant",
-        "content": word_generation_instruction,
+        "content": art_prompt,
     }]
-    
-    response = gpt.append_conversation(gpt.handle_response(
-        messages,
-        gpt.new_user_message("""Please generate me a stringified JSON object of random mundane but specific words. {}""".format(word_topics))
-    ))
-    
-    print(response)
-    
-    response = gpt.append_conversation(gpt.handle_response(
-        messages,
-        gpt.new_user_message("""Look over the words you generated and evaluate them. Replace 2 of the words and keep the remaining 3.
-                         The new words should be less common synonyms. Output another JSON object with the same structure as the last one.
-                         Ensure that each value only consists of that part of speech. For example, no adjectives should be applied to a Place or Thing noun.
-                         """)
-    ))
-    
-    print(response)
-    
-    response = gpt.append_conversation(gpt.handle_response(
-        messages,
-        gpt.new_user_message("""Using the words that you just generated, I want you to write a single imperative sentence from the 3rd person beginning with 'Generate art of Hatsune Miku'.
-        The remainder of the sentence should capture the essence of the words that were just generated. The verb should be applied to what Miku is doing.
-        Avoid overly violent or sexual themes.
-        The adverb will typically modify the verb. Feel free to use the 'Place' and 'Thing' nouns in a creative way. It does not need to relate to Miku, her music, or technology.
-        """)
-    ))
-    
-    dalle_prompt = messages[-1]['content']
-    messages[-1]['content'] = messages[-1]['content'].replace('Generate art of ', '') # Remove 'Generate art of' so we stop getting art-related twitter posts.
-    print(dalle_prompt)
 
-    response = gpt.append_conversation(gpt.handle_response(
+    output = gpt.handle_response(
         messages,
-        gpt.new_user_message("""You are now Hatsune Miku, a 16 year old girl and hugely famous virtual pop idol. Given the previous sentence you just gave me, I want you to generate a twitter post.
-                         The twitter post can be no longer than 280 characters. You, as Hatsune Miku, should describe what you did today based on the previous prompt
+        gpt.new_user_message("""You are now Hatsune Miku, a 16 year old girl and hugely famous virtual pop idol. Given the previous art prompt you just gave me, I want you to generate a twitter post.
+                         The twitter post can be no longer than 280 characters. You, as Hatsune Miku, should describe what you did today based on the previous art prompt
                          and as if you are addressing your followers. Try to capture the emotion that you felt based on whether the words used are positive or negative.
                          You can make up events that happened to you while doing this.
                          Be descriptive about how you feel.
                          Possibly talk about your music and songs.
-                         Do not use too many adverbs. Do not copy the previous sentence word for word.
+                         Make sure to talk about the location you're at and the object you're there with.
+                         Do NOT use many adverbs. Do NOT copy the previous art prompt word for word.
+                         You MUST be Hatsune Miku and describe your day as the scene depicts.
                          Any twitter hashtags should be related to the post.
                          Include a couple emojis that are relevant.
-                         If the location is a vague location, give it a more specific name to make it sound more like a real place in Miku's world.
-                         If the location is a real location, keep the real name.
-                         The twitter post should end with a japanese sentence.""")    
-    ))
+                         The twitter post should end with an appropriate japanese sentence.
+                         REMEMBER to IGNORE THE FIRST SENTENCE of the previous art prompt starting with "Generate art of".""")    
+    )
     
-    print(response)
+    print('TWITTER', output['response'] or 'No Response?')
+    logging.info('Twitter post: {}'.format(output['response']))
+
+    return output
+
+###################################
+#:::::::::::::::::::::::::::::::::#
+###################################
+
+def generate_prompt_for_stability(location: str, item: str):
+    system_context = "You are a prompt generating entity tasked with outputting ONLY the requested prompt."
+    initial_word_generation_instruction = """
+    I would like you to generate me a prompt. This prompt is intended for generative art AI models, and as such should begin with our protagonist Hatsune Miku.
+    The start of the prompt should begin with "Generate art of Hatsune Miku" and specify the art style of the generation to be something like "{art_style}". From there, I need a verbose description of Miku spending her time at this specified location: "{location}".
+    Make sure describe this location with information about the surrounding area that should be visible from a still shot image. Ask yourself, "would other people accompany her in this place or is it likely that she would be alone?".
+    If you determine she is alone, do not specify anything. If people are nearby, make sure that use one or more demonyms to describe their origin.
+    The following object should be integrated into the scene: "{item}". Describe the still shot image by explaining what Miku is doing with this object using an action verb. The {item} object and what Miku is doing with it should be a priority.
+    If the item is a food, she should be eating it. If the item is a wearable article, she should be wearing it. Other types of items should be interacted with appropriately. The item SHOULD BE HERS.
+    Miku can optionally have an emotional expression drawn in response to the object.
+    Given the combination of location and object, the whole scene may be positive or negative and the tone of the whole prompt should reflect in this way.
+    If the situation calls for it, Miku should be moving or otherwise doing a physical action to interact with the scene.
+    Make sure to include a description of her typical clothing but modify the clothing based on the action that she is doing in the scene. For example, if it is cold then her clothing should be something cozier.
+    Lastly, take note to describe some of the details of the scene, such as the lighting conditions, weather conditions, or the time of day and how it reflects the objects in the scene.
+    REMEMBER, since this scene is for art generation, I NEED this description to reflect a static place in time. Miku is only in one place doing one thing.
+    The output MUST be 10 sentences long.
+    """.format(location=location, item=item, art_style=gpt.get_random_visual_art_prompt_intro(force_style=None))
+    messages = [{
+        "role": "system",
+        "content": system_context,
+    }]
     
-    #if (response):
-        # dalle_tail_end = response.split('Generate art of Hatsune Miku ')[1]
-        # print(dalle_tail_end)
-    '''
-    response = append_conversation(handle_response(
+    # output.history / output.response
+    output = gpt.handle_response(
         messages,
-        new_user_message("Given the previous sentence you generated. Please generate me a twitter post with no more than 280 characters. The twitter post should be written as Hatsune Miku. Do not mention the whole prompt word for word. Miku should describe what she did and add additional comments about it such as how she feels, who she did it with, where it took place, and what was going on nearby. Keep it cute and friendly. Feel free to make up stuff or exaggerate since this is fictional.")    
-    ))
-    '''
-    return response
+        gpt.new_user_message(initial_word_generation_instruction)
+    )
+    
+    print('OUTPUT', output['response'])
+    return output
 
 ###################################
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
 def generate_post():
+    # return defs.PostData(socialMediaPrompt='test', artPrompt='test', inscribedText='TEST INSCRIBED')
     ROOT_DIR = Path(__file__).parent
     locations_file = '{root}/wordList/locations.json'.format(root=ROOT_DIR)
     items_file = '{root}/wordList/items.json'.format(root=ROOT_DIR)
+    art_prompt = {
+        'response': ''
+    }
+    social_media_text = {
+        'response': ''
+    }
     with open(locations_file, 'r', encoding='UTF-8') as location_f:
         with open(items_file, 'r', encoding='UTF-8') as item_f:
             locations_dict: Dict[str, str] = json.load(location_f)
             items_dict = json.load(item_f)
-            random_item = random.choice(items_dict) or 'cringe'
+            random_item = random.choice(items_dict)
             random_loc_type = random.choice(locations_dict)
             random_loc = random.choice(random_loc_type['list'])
             print("{} : {}".format(random_item, random_loc))
-    data = defs.PostData(socialMediaPrompt='', artPrompt='')
+            art_prompt = generate_prompt_for_stability(random_loc, random_item)
+            social_media_text = generate_social_media_post(art_prompt['response'])
+            
+    # To be written to the image
+    inscribed_text = '{} / {}'.format(random_item, random_loc)
+            
+    data = defs.PostData(socialMediaPrompt=social_media_text['response'], artPrompt=art_prompt['response'], inscribedText=inscribed_text)
     return data

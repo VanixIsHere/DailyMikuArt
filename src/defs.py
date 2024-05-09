@@ -1,5 +1,8 @@
 from enum import Enum
+from pathlib import Path
 from typing import Dict, Optional, TypedDict
+
+ROOT_DIR = Path(__file__).parent
 
 MajorCountries = ['JP', 'US', 'GB', 'KR']
 MinorCountries = ['AU', 'BE', 'BR', 'CA', 'CN', 'DE', 'DK', 'EG', 'ES', 'FR', 'HK', 'IE', 'IN', 'MX', 'NL', 'NO', 'NZ', 'SE', 'SG', 'TH', 'TW', 'UA', 'WS']
@@ -34,6 +37,10 @@ class PostProps:
         self.holiday = holiday
         
 class PostData:
-    def __init__(self, socialMediaPrompt, artPrompt):
+    def __init__(self, socialMediaPrompt, artPrompt, inscribedText = ''):
         self.socialMediaPrompt = socialMediaPrompt
         self.artPrompt = artPrompt
+        self.inscribedText = inscribedText
+        
+class FailedImageGen(Exception):
+    pass

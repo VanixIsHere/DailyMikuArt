@@ -196,7 +196,9 @@ def generate_post(holiday: defs.HolidayType):
     # Forcing Holiday Posts to adopt 'Studio Art' styles all the time because they are they are the least problematic outcomes. Can't be celebrating post-apocalyptic Easter Sunday, ya know?
     dalle_prompt = modify_prompt_for_dalle('{introprompt} {mainprompt}'.format(introprompt=get_random_visual_art_prompt_intro(force_style=None), mainprompt=main_prompt_action), holiday)
     logging.info('Art generation prompt generated: "{prompt}"'.format(prompt=dalle_prompt))
+    
+    inscribed_text = 'Celebrating {}'.format(holiday[0])
 
-    data = defs.PostData(socialMediaPrompt=social_media_prompt, artPrompt=dalle_prompt)
+    data = defs.PostData(socialMediaPrompt=social_media_prompt, artPrompt=dalle_prompt, inscribedText=inscribed_text)
     print (data)
     return data

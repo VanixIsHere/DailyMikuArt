@@ -27,6 +27,7 @@ def date_to_filename(date: str):
         assert len(date_array) == 3
         return '{year}-{month}-{day}'.format(year=date_array[2], month=date_array[0], day=date_array[1])
     except AssertionError:
+        logging.error('Error while converting date to filename form.')
         print('Error while converting date to filename form.')
         
 ###################################
@@ -40,6 +41,7 @@ def filename_to_date(filename: str):
         assert len(filename_array) == 3
         return '{month}-{day}-{year}'.format(month=filename_array[1], day=filename_array[2], year=filename_array[0])
     except AssertionError:
+        logging.error('Error while converting filename to date form.')
         print('Error while converting filename to date form.')
     
 
@@ -69,12 +71,19 @@ def get_starting_date(use_today: bool, specific_date=''):
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
+def get_image_files(date_folder: str):
+    if (os.path.isdir(date_folder)):
+        files = os.listdir(date_folder)
+        for file in files:
+            if file.endswith(".jpeg") or file.endswith(".png"):
+                #print(file)
+                ''''''
+
 async def start():
-    ROOT_DIR = Path(__file__).parent
-    history_folder = '{root}\\history'.format(root=ROOT_DIR)
+    history_folder = '{root}\\history'.format(root=defs.ROOT_DIR)
     if not os.path.exists(history_folder):
         os.makedirs(history_folder)
-    selected_date = get_starting_date(use_today=False, specific_date='6-23-2024') # specific_date used for debugging #6-18-2024 / Abrahamic
+    selected_date = get_starting_date(use_today=False, specific_date='') # specific_date used for debugging #6-18-2024 / Abrahamic
     holiday = get_special_holiday(selected_date)
     
     chosen_post_type: defs.PostType = defs.PostType.HOLIDAY if holiday else None
@@ -104,6 +113,8 @@ async def start():
         
         post_props = defs.PostProps(type=chosen_post_type, date=selected_date, folderName=date_folder, attempt=attempts, holiday=holiday)
         image_successful = await initiate_post_generation(post_props)
+        image_successful = False
+        get_image_files(date_folder)
         if (image_successful):
             print('Image generated successfully on attempt #{}.'.format(attempts))
             successful_generation = True
