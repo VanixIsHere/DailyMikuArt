@@ -134,7 +134,7 @@ def modify_prompt_for_social_media(base_prompt: str, holiday: defs.HolidayType):
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def modify_prompt_for_dalle(base_prompt: str, holiday: defs.HolidayType):
+def modify_prompt_for_art_generation(base_prompt: str, holiday: defs.HolidayType):
     logging.info('Modifying base prompt for art generation.')
     prompt_sentences: list[str] = [base_prompt]
     
@@ -173,7 +173,8 @@ def modify_prompt_for_dalle(base_prompt: str, holiday: defs.HolidayType):
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def generate_post(holiday: defs.HolidayType):
+def generate_post(props: defs.PostProps):
+    holiday = props.holiday
     country_list = holiday[1]
     country_count = len(country_list)
     logging.info('Begin generation for the holiday of "{holiday}" with {countryCount} participating: {countries}'.format(holiday=holiday[0], countryCount=country_count, countries=holiday[1]))
@@ -194,7 +195,7 @@ def generate_post(holiday: defs.HolidayType):
     logging.info('Social media prompt generated: "{prompt}"'.format(prompt=social_media_prompt))
 
     # Forcing Holiday Posts to adopt 'Studio Art' styles all the time because they are they are the least problematic outcomes. Can't be celebrating post-apocalyptic Easter Sunday, ya know?
-    dalle_prompt = modify_prompt_for_dalle('{introprompt} {mainprompt}'.format(introprompt=get_random_visual_art_prompt_intro(force_style=None), mainprompt=main_prompt_action), holiday)
+    dalle_prompt = modify_prompt_for_art_generation('{introprompt} {mainprompt}'.format(introprompt=get_random_visual_art_prompt_intro(force_style=None), mainprompt=main_prompt_action), holiday)
     logging.info('Art generation prompt generated: "{prompt}"'.format(prompt=dalle_prompt))
     
     inscribed_text = 'Celebrating {}'.format(holiday[0])

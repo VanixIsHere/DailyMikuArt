@@ -3,6 +3,8 @@ from pathlib import Path
 from typing import Dict, Optional, TypedDict
 
 ROOT_DIR = Path(__file__).parent
+history_folder = '{root}\\history'.format(root=ROOT_DIR)
+archive_folder = '{root}\\archive'.format(root=ROOT_DIR)
 
 MajorCountries = ['JP', 'US', 'GB', 'KR']
 MinorCountries = ['AU', 'BE', 'BR', 'CA', 'CN', 'DE', 'DK', 'EG', 'ES', 'FR', 'HK', 'IE', 'IN', 'MX', 'NL', 'NO', 'NZ', 'SE', 'SG', 'TH', 'TW', 'UA', 'WS']
@@ -29,7 +31,8 @@ class WeightedOption(TypedDict):
     weight: int
     
 class PostProps:
-    def __init__(self, type: PostType, date: str, folderName: str, attempt: int, holiday: Optional[HolidayType]):
+    def __init__(self, uuid: str, type: PostType, date: str, folderName: str, attempt: int, holiday: Optional[HolidayType]):
+        self.uuid = uuid
         self.type = type
         self.date = date
         self.folderName = folderName
@@ -38,9 +41,9 @@ class PostProps:
         
 class PostData:
     def __init__(self, socialMediaPrompt, artPrompt, inscribedText = ''):
-        self.socialMediaPrompt = socialMediaPrompt
-        self.artPrompt = artPrompt
-        self.inscribedText = inscribedText
+        self.socialMediaPrompt: str = socialMediaPrompt
+        self.artPrompt: str = artPrompt
+        self.inscribedText: str = inscribedText
         
 class FailedImageGen(Exception):
     pass

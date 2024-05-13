@@ -2,8 +2,12 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+CONSUMERAPI = os.getenv("TWITTER_CONSUMER_API")
+CONSUMERSECRET = os.getenv("TWITTER_CONSUMER_SECRET")
+TWITTERBEARER = os.getenv("TWITTER_BEARER_KEY")
+TWITTERACCESS = os.getenv("TWITTER_ACCESS_KEY")
+TWITTERSECRET = os.getenv("TWITTER_SECRET_KEY")
 CHATGPT = os.getenv("CHATGPT_KEY")
-DALLE = os.getenv("DALLE_KEY")
 STABILITY = os.getenv("STABILITY_KEY")
 BING = os.getenv("BING_SESSION")
 BINGSEARCH = os.getenv("BING_SEARCH")

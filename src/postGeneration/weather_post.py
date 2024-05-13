@@ -5,6 +5,6 @@ from .. import defs
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def generate_post():
+def generate_post(props: defs.PostProps):
     data = defs.PostData(socialMediaPrompt='', artPrompt='')
     return data
