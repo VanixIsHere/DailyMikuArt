@@ -32,7 +32,7 @@ def new_user_message(prompt: str):
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def handle_response(conversation_history: list[dict[str, str]], new_prompt: dict[str, str], gpt_model='gpt-3.5-turbo'): #gpt-4 / gpt-3.5-turbo
+def handle_response(conversation_history: list[dict[str, str]], new_prompt: dict[str, str], gpt_model='gpt-4o'): #gpt-4 / gpt-3.5-turbo
     conversation_history.append(new_prompt)
     chat_completion = client.chat.completions.create(
         model=gpt_model,

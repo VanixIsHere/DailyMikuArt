@@ -52,7 +52,6 @@ async def initiate_post_generation(props: defs.PostProps):
             postData = sports_post.generate_post(props)
             
     print(postData)
-    return False
     if (postData.artPrompt and postData.inscribedText and postData.socialMediaPrompt):
         content_write_success = write_post_content_to_file(props, postData.socialMediaPrompt)
         return await initiate_art_generation(props, postData.artPrompt, postData.inscribedText) and content_write_success

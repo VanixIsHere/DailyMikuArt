@@ -160,7 +160,7 @@ def generate_post_data(props: defs.PostProps, location_type: str, location: str,
     indefinite_location_types = ['National Geography']
     
     prompts = []
-    prompts.append(f"I would like you to generate me a one long paragraph blog post on your visit to '{location}'.")
+    prompts.append(f"I would like you to generate me a one paragraph long blog post on your visit to '{location}'.")
     prompts.append("Refer to the location using indefinite articles but come up with a less vague name that your location is in.") if location_type in indefinite_location_types else prompts.append("Refer to '{}' by it's real world name.".format(location))
     prompts.append("'{}' is your relevant item on the trip.".format(item))
     prompts.append(add_context_to_prompt_item(props, location_type, location, item_type, item))
@@ -177,11 +177,11 @@ def generate_post_data(props: defs.PostProps, location_type: str, location: str,
                    Include appropriate emojis that make sense.
                    When calculating the length of the twitter post, emojis and japanese characters count as 2 instead of 1.
                    """)
-    output = gpt.handle_response(
+    social_media_text = gpt.handle_response(
         messages,
         gpt.new_user_message(' '.join(prompts))
     )
-    print(output['response'])
+    print(social_media_text['response'])
     messages.append(gpt.new_assistant_message(output['response']))
     
     art_style = gpt.get_random_visual_art_prompt_intro(force_style=None)
@@ -193,16 +193,16 @@ def generate_post_data(props: defs.PostProps, location_type: str, location: str,
                    Keep it professional but answer in plain English. Get straight to the point. Don't be superfluous and mention how things are symbolized.
                    To properly describe the tone you can describe the weather and the way certain lights illuminate parts of the scene.
                    """)
-    output = gpt.handle_response(
+    art_prompt = gpt.handle_response(
         messages,
         gpt.new_user_message(' '.join(prompts))
     )
-    print(output['response'])
+    print(art_prompt['response'])
     
-    print('EXITING')
-    sys.exit()
-    # art_prompt = generate_prompt_for_stability(random_loc, random_item)
-    # social_media_text = generate_social_media_post(art_prompt['response'], random_loc, random_item)
+    # To be written to the image
+    inscribed_text = '{} / {}'.format(item, location)
+    data = defs.PostData(socialMediaPrompt=social_media_text['response'], artPrompt=art_prompt['response'], inscribedText=inscribed_text)
+    return data
 
 ###################################
 #:::::::::::::::::::::::::::::::::#
@@ -213,12 +213,7 @@ def generate_post(props: defs.PostProps):
     ROOT_DIR = Path(__file__).parent
     locations_file = '{root}/wordList/locations.json'.format(root=ROOT_DIR)
     items_file = '{root}/wordList/items.json'.format(root=ROOT_DIR)
-    art_prompt = {
-        'response': ''
-    }
-    social_media_text = {
-        'response': ''
-    }
+    data = defs.PostData(socialMediaPrompt='', artPrompt='', inscribedText='')
     with open(locations_file, 'r', encoding='UTF-8') as location_f:
         with open(items_file, 'r', encoding='UTF-8') as item_f:
             locations_dict: Dict[str, str] = json.load(location_f)
@@ -228,12 +223,5 @@ def generate_post(props: defs.PostProps):
             random_loc_type = random.choice(locations_dict)
             random_loc = random.choice(random_loc_type['list'])
             print("{} : {}".format(random_item, random_loc))
-            generate_post_data(props, random_loc_type, random_loc, random_item_type, random_item)
-            # art_prompt = generate_prompt_for_stability(random_loc, random_item)
-            # social_media_text = generate_social_media_post(art_prompt['response'], random_loc, random_item)
-            
-    # To be written to the image
-    inscribed_text = '{} / {}'.format(random_item, random_loc)
-            
-    data = defs.PostData(socialMediaPrompt=social_media_text['response'], artPrompt=art_prompt['response'], inscribedText=inscribed_text)
+            data = generate_post_data(props, random_loc_type, random_loc, random_item_type, random_item)
     return data
