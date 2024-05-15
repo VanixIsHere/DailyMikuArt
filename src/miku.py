@@ -3,7 +3,6 @@ import csv
 from pathlib import Path
 from . import twitter
 from . import defs
-import json
 import time
 import shutil
 import logging
@@ -18,6 +17,7 @@ from datetime import date, datetime
 from dotenv import load_dotenv
 from .postGeneration.generate_posts import initiate_post_generation
 from .postGeneration.holiday_post import get_special_holiday
+from .postGeneration.selenium import get_bing_cookies
 
 load_dotenv()
 DALLE_KEY = os.getenv("DALLE_KEY")
@@ -123,12 +123,13 @@ async def start():
     create_folder_if_needed(defs.archive_folder)
     selected_date = get_starting_date(use_today=False, specific_date='1-22-2024') # specific_date used for debugging #6-18-2024 / Abrahamic
     date_file_name = date_to_filename(selected_date)
-    date_folder_base = '{historyFolder}\\{folderName}'.format(historyFolder=defs.history_folder, folderName=date_file_name)
+    date_folder_base = os.path.join(defs.history_folder, date_file_name)
     
     holiday = get_special_holiday(selected_date)
     chosen_post_type: defs.PostType = defs.PostType.HOLIDAY if holiday else None
     attempts = 0
     successful_generation = False # Set this to True when we successfully generate Twitter post content.
+    cookies = await get_bing_cookies()
     
     # twitter.prepare_twitter_post(selected_date)
     
@@ -140,19 +141,19 @@ async def start():
         # If a folder already exists, archive it and remove the original
         existing_dirs = find_folders_with_substring(date_file_name)
         for dir in existing_dirs:
-            current_loc = '{base}\\{dir}'.format(base=defs.history_folder, dir=dir)
+            current_loc = os.path.join(defs.history_folder, dir)
             current_loc_files = [f for f in os.listdir(current_loc) if os.path.isfile(os.path.join(current_loc, f))]
             if len(current_loc_files) <= 1:
                 # Remove folder if it has nothing or a single log file.
                 shutil.rmtree(current_loc)
             else:
-                new_loc = '{base}\\{dir}'.format(base=defs.archive_folder, dir=dir)
+                new_loc = os.path.join(defs.archive_folder, dir)
                 shutil.move(current_loc, new_loc)
         
         if not os.path.exists(date_folder):
             os.makedirs(date_folder)
             
-        date_logging_file = '{folder}\\miku_output_{uuid}.log'.format(folder=date_folder, uuid=current_uuid)
+        date_logging_file = os.path.join(date_folder, 'miku_output_{uuid}.log'.format(uuid=current_uuid))
         logging.basicConfig(
             filename=date_logging_file,
             level=logging.INFO,
@@ -168,7 +169,7 @@ async def start():
             weights = [10.8, 0.1, 0.1]
             chosen_post_type = random.choices(population, weights, k=1)[0]
         
-        post_props = defs.PostProps(uuid=current_uuid, type=chosen_post_type, date=selected_date, folderName=date_folder, attempt=attempts, holiday=holiday)
+        post_props = defs.PostProps(uuid=current_uuid, type=chosen_post_type, date=selected_date, folderName=date_folder, attempt=attempts, bingCookies=cookies, holiday=holiday)
         image_successful = await initiate_post_generation(post_props)
 
         get_image_files(date_folder)
@@ -187,7 +188,7 @@ async def start():
 #:::::::::::::::::::::::::::::::::#
 ###################################
             
-async def start_time_loop():
+async def start_time_loop(chrome_driver_loc, firefox_driver_loc):
     counter = itertools.count()
     seconds_in_a_minute = 60
     seconds_in_an_hour = 60 * seconds_in_a_minute

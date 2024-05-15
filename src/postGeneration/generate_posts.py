@@ -23,7 +23,7 @@ def get_image_files(date_folder: str):
 
 def write_post_content_to_file(props: defs.PostProps, content: str):
     ## props.folderName
-    file_name = '{folder}\\miku_twitter_content_{uuid}.txt'.format(folder=props.folderName, uuid=props.uuid)
+    file_name = os.path.join(props.folderName, 'miku_twitter_content_{uuid}.txt'.format(uuid=props.uuid))
     try:
         with open(file_name, 'w', encoding='utf-8') as file:
             file.write(content)

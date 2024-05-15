@@ -26,7 +26,7 @@ def inscribe_text_on_images(props: defs.PostProps, text: str, image_file_list: l
     for image in image_file_list:
         try:
             img = Image.open(image)
-            font_loc = '{}\\postResources\\BrushHandNew.ttf'.format(defs.ROOT_DIR)
+            font_loc = os.path.join(defs.ROOT_DIR, 'postResources', 'BrushHandNew.ttf')
             font_size = 32
             font_leading = 8
             x = 30
@@ -91,7 +91,10 @@ def initiate_dalle_layer(props: defs.PostProps, prompt: str, output_image: str):
 ###################################
 
 def initiate_bing_layer(props: defs.PostProps, prompt: str, output_image: str, image_count: int):
-    gen = ImageGen(auth_cookie=keys.BING, auth_cookie_SRCHHPGUSR=keys.BINGSEARCH, debug_file="{}\\miku_output_{}.log".format(props.folderName, props.uuid))
+    bing_auth = props.bingCookies.session
+    bing_search = props.bingCookies.search
+    debug_file = os.path.join(props.folderName, 'miku_output_{}.log'.format(props.uuid))
+    gen = ImageGen(auth_cookie=bing_auth, auth_cookie_SRCHHPGUSR=bing_search, debug_file=debug_file)
     url_list = gen.get_images(prompt=prompt)
     gen.save_images(links=url_list, output_dir=props.folderName, download_count=image_count, file_name=output_image)
 
@@ -159,7 +162,7 @@ async def initiate_art_generation(props: defs.PostProps, prompt: str, inscribedT
         logging.info('Beginning art generation with prompt - "{}"'.format(prompt))
         try:
             bing_image_count = 3 # Attempt to download 3 images.
-            bing_image_file = '{folderNameBase}\\{uuid}_bing_miku_art_{date}_{attempt}'.format(uuid=props.uuid, folderNameBase=props.folderName, date=props.date, attempt=props.attempt)
+            bing_image_file = os.path.join(props.folderName, '{uuid}_bing_miku_art_{date}_{attempt}'.format(uuid=props.uuid, date=props.date, attempt=props.attempt))
             initiate_bing_layer(props, prompt, bing_image_file, bing_image_count)
             image_variant_successes: list[bool] = []
             for x in range(0, bing_image_count):
@@ -178,7 +181,7 @@ async def initiate_art_generation(props: defs.PostProps, prompt: str, inscribedT
             logging.info('Bing art generation failed - trying again with Stability API')
             try:
                 # Stable Diffusion is worse at depicting Miku doing an action, but is more reliable at getting us to a downloaded image of Miku
-                stability_image_file = '{folderNameBase}\\{uuid}_stab_miku_art_{date}_{attempt}.png'.format(uuid=props.uuid, folderNameBase=props.folderName, date=props.date, attempt=props.attempt)
+                stability_image_file = os.path.join(props.folderName, '{uuid}_stab_miku_art_{date}_{attempt}.png'.format(uuid=props.uuid, date=props.date, attempt=props.attempt))
                 initiate_stability_layer(props, prompt, stability_image_file)
                 is_valid_image = validate_image(stability_image_file)
                 image_generation_success = is_valid_image
@@ -194,7 +197,7 @@ async def initiate_art_generation(props: defs.PostProps, prompt: str, inscribedT
                 try:
                     # DALL-E can be dependable, but it will destroy Miku's identity to avoid any copyright implications (Use of Miku's image is allowed under Creative Commons and in this case is being used non-commercially)
                     # Regardless we will most likely get back an image of a generic cyan-colored-hair anime girl. If we're lucky she will have pig tails.
-                    dalle_image_file = '{folderNameBase}\\{uuid}_dalle_miku_art_{date}_{attempt}.png'.format(uuid=props.uuid, folderNameBase=props.folderName, date=props.date, attempt=props.attempt)
+                    dalle_image_file = os.path.join(props.folderName, '{uuid}_dalle_miku_art_{date}_{attempt}.png'.format(uuid=props.uuid, date=props.date, attempt=props.attempt))
                     initiate_dalle_layer (props, prompt, dalle_image_file)
                     is_valid_image = validate_image(dalle_image_file)
                     image_generation_success = is_valid_image
