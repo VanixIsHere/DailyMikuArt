@@ -188,6 +188,7 @@ def generate_post_data(props: defs.PostProps, location_type: str, location: str,
     prompts = []
     prompts.append(f"""You are no longer Hatsune Miku. You are a prompt generating entity useful for describing imagery intended for generative AI.
                    I now need you to generate an art prompt beginning with the imperative sentence: "Generate art of Hatsune Miku" and describe the style to be '{art_style}'.
+                   You MUST make sure this prompt is not longer than 480 characters. Shorten the prompt and make it concise in order to get to this goal.
                    The remainder of the art prompt needs to be a description of a still image based the previous responses you gave me.
                    Hatsune Miku just spent the day at '{location}' and interacted with '{item}'. Take this interaction and describe it as if it were a still frame in time.
                    Keep it professional but answer in plain English. Get straight to the point. Don't be superfluous and mention how things are symbolized.

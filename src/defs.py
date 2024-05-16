@@ -31,25 +31,13 @@ class WeightedOption(TypedDict):
     name: str
     weight: int
     
-class BingCookies:
-    def __init__(self, session, search):
-        self.session: str = session
-        self.search: str = search
-        
-    def set_session(self, session: str):
-        self.session = session
-        
-    def set_search(self, search: str):
-        self.search = search
-    
 class PostProps:
-    def __init__(self, uuid: str, type: PostType, date: str, folderName: str, attempt: int, bingCookies: BingCookies, holiday: Optional[HolidayType]):
+    def __init__(self, uuid: str, type: PostType, date: str, folderName: str, attempt: int, holiday: Optional[HolidayType]):
         self.uuid = uuid
         self.type = type
         self.date = date
         self.folderName = folderName
         self.attempt = attempt
-        self.bingCookies = bingCookies
         self.holiday = holiday
         
 class PostData:
@@ -59,7 +47,4 @@ class PostData:
         self.inscribedText: str = inscribedText
         
 class FailedImageGen(Exception):
-    pass
-
-class FailedGettingCookie(Exception):
     pass

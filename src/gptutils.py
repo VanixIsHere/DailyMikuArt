@@ -107,6 +107,7 @@ def get_random_visual_art_prompt_intro(force_style: Optional[Style]):
             { 'name': 'Pixar', 'weight': 0.08 },
             { 'name': 'Sanrio and Friends', 'weight': 0.18 },
             { 'name': 'Studio Trigger', 'weight': 0.16 },
+            { 'name': 'Hiroyuki Imaishi', 'weight': 1000 },
             { 'name': 'Studio Mappa', 'weight': 0.16 },
             { 'name': 'Akira Toriyama', 'weight': 0.08 }
         ]

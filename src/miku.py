@@ -1,5 +1,3 @@
-import asyncio
-import csv
 from pathlib import Path
 from . import twitter
 from . import defs
@@ -17,7 +15,6 @@ from datetime import date, datetime
 from dotenv import load_dotenv
 from .postGeneration.generate_posts import initiate_post_generation
 from .postGeneration.holiday_post import get_special_holiday
-from .postGeneration.selenium import get_bing_cookies
 
 load_dotenv()
 DALLE_KEY = os.getenv("DALLE_KEY")
@@ -129,7 +126,6 @@ async def start():
     chosen_post_type: defs.PostType = defs.PostType.HOLIDAY if holiday else None
     attempts = 0
     successful_generation = False # Set this to True when we successfully generate Twitter post content.
-    cookies = await get_bing_cookies()
     
     # twitter.prepare_twitter_post(selected_date)
     
@@ -169,7 +165,7 @@ async def start():
             weights = [10.8, 0.1, 0.1]
             chosen_post_type = random.choices(population, weights, k=1)[0]
         
-        post_props = defs.PostProps(uuid=current_uuid, type=chosen_post_type, date=selected_date, folderName=date_folder, attempt=attempts, bingCookies=cookies, holiday=holiday)
+        post_props = defs.PostProps(uuid=current_uuid, type=chosen_post_type, date=selected_date, folderName=date_folder, attempt=attempts, holiday=holiday)
         image_successful = await initiate_post_generation(post_props)
 
         get_image_files(date_folder)

@@ -1,18 +1,13 @@
-import asyncio
 from pathlib import Path
+from . import selenium as Sel
 from .. import keys
 from openai import OpenAI
 import os
-from io import BytesIO
 import logging
 from .. import defs
-from BingImageCreator import ImageGen
-
-#from . BingImageCreator import ImageGen
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from PIL import Image, ImageDraw, ImageFont
-import urllib
 
 client = OpenAI(
     api_key=keys.CHATGPT
@@ -57,7 +52,13 @@ def inscribe_text_on_images(props: defs.PostProps, text: str, image_file_list: l
 ###################################
 
 def validate_image(image_file):
+    print(f'Checking if {image_file} exists...')
+    if not os.path.exists(image_file):
+        print('no')
+        logging.info('Checked for an image that does not exist.')
+        return False
     try:
+        print('Exists')
         Image.open(image_file).verify()
         return True
     except Exception:
@@ -90,13 +91,8 @@ def initiate_dalle_layer(props: defs.PostProps, prompt: str, output_image: str):
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def initiate_bing_layer(props: defs.PostProps, prompt: str, output_image: str, image_count: int):
-    bing_auth = props.bingCookies.session
-    bing_search = props.bingCookies.search
-    debug_file = os.path.join(props.folderName, 'miku_output_{}.log'.format(props.uuid))
-    gen = ImageGen(auth_cookie=bing_auth, auth_cookie_SRCHHPGUSR=bing_search, debug_file=debug_file)
-    url_list = gen.get_images(prompt=prompt)
-    gen.save_images(links=url_list, output_dir=props.folderName, download_count=image_count, file_name=output_image)
+async def initiate_bing_layer(props: defs.PostProps, prompt: str, output_image: str):
+    await Sel.bing_image_create(props, prompt, output_image)
 
 ###################################
 #:::::::::::::::::::::::::::::::::#
@@ -161,12 +157,11 @@ async def initiate_art_generation(props: defs.PostProps, prompt: str, inscribedT
     else:
         logging.info('Beginning art generation with prompt - "{}"'.format(prompt))
         try:
-            bing_image_count = 3 # Attempt to download 3 images.
-            bing_image_file = os.path.join(props.folderName, '{uuid}_bing_miku_art_{date}_{attempt}'.format(uuid=props.uuid, date=props.date, attempt=props.attempt))
-            initiate_bing_layer(props, prompt, bing_image_file, bing_image_count)
+            bing_image_file = '{uuid}_bing_miku_art_{date}_{attempt}'.format(uuid=props.uuid, date=props.date, attempt=props.attempt)
+            await initiate_bing_layer(props, prompt, bing_image_file)
             image_variant_successes: list[bool] = []
-            for x in range(0, bing_image_count):
-                bing_image_variant = '{fileBase}_{countNum}.jpeg'.format(fileBase=bing_image_file, countNum=x)
+            for x in range(0, 4):
+                bing_image_variant = os.path.join(props.folderName, '{fileBase}_{countNum}.jpeg'.format(fileBase=bing_image_file, countNum=x + 1))
                 is_valid_image = validate_image(bing_image_variant)
                 image_variant_successes.append(is_valid_image)
                 if (is_valid_image):

@@ -2,6 +2,7 @@ import asyncio
 import os
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from src import miku
 
 
@@ -13,6 +14,9 @@ def download_drivers():
 
     firefox_driver_path = GeckoDriverManager().install()
     print(f"GeckoDriver is installed at: {firefox_driver_path}")
+    
+    edge_driver_path = EdgeChromiumDriverManager().install()
+    print(f"MSEdgeDriver is installed at: {edge_driver_path}")
     
 ###################################
 #:::::::::::::::::::::::::::::::::#
