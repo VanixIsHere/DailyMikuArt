@@ -1,14 +1,14 @@
-import os
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
+BINGNAME = os.getenv("BING_NAME")
+BINGPASS = os.getenv("BING_PASSWORD")
+BINGUSER = os.getenv("BING_USERNAME")
+CHATGPT = os.getenv("CHATGPT_KEY")
 CONSUMERAPI = os.getenv("TWITTER_CONSUMER_API")
 CONSUMERSECRET = os.getenv("TWITTER_CONSUMER_SECRET")
-TWITTERBEARER = os.getenv("TWITTER_BEARER_KEY")
-TWITTERACCESS = os.getenv("TWITTER_ACCESS_KEY")
-TWITTERSECRET = os.getenv("TWITTER_SECRET_KEY")
-CHATGPT = os.getenv("CHATGPT_KEY")
 STABILITY = os.getenv("STABILITY_KEY")
-BINGUSER = os.getenv("BING_USERNAME")
-BINGPASS = os.getenv("BING_PASSWORD")
-BINGNAME = os.getenv("BING_NAME")
+TWITTERACCESS = os.getenv("TWITTER_ACCESS_KEY")
+TWITTERBEARER = os.getenv("TWITTER_BEARER_KEY")
+TWITTERSECRET = os.getenv("TWITTER_SECRET_KEY")

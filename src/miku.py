@@ -1,20 +1,20 @@
-from pathlib import Path
-from . import twitter
 from . import defs
-import time
-import shutil
-import logging
+from . import twitter
+from .postGeneration.generate_posts import initiate_post_generation
+from .postGeneration.holiday_post import get_special_holiday
+from datetime import date, datetime
+from dotenv import load_dotenv
+from pathlib import Path
 import itertools
+import logging
 import logging.config
 import os
 import random
 import re
-import uuid
+import shutil
 import sys
-from datetime import date, datetime
-from dotenv import load_dotenv
-from .postGeneration.generate_posts import initiate_post_generation
-from .postGeneration.holiday_post import get_special_holiday
+import time
+import uuid
 
 load_dotenv()
 DALLE_KEY = os.getenv("DALLE_KEY")
@@ -25,6 +25,14 @@ GenerationAttempts = 1
 ###################################
 
 def date_to_filename(date: str):
+    """Converts a date string in the 'mm-dd-YYYY' format into the 'YYYY-mm-dd' format, which is used for directory/file naming.
+
+    Args:
+        date (str): A date in the 'mm-dd-YYYY' format to be converted.
+
+    Returns:
+        str: A string in the 'YYYY-mm-dd' format.
+    """
     date_array = re.split(r'[\s|-]', date) # Expecting MM-DD-YYYY
     try:
         assert len(date_array) == 3
@@ -37,8 +45,15 @@ def date_to_filename(date: str):
 #:::::::::::::::::::::::::::::::::#
 ###################################
     
-
 def filename_to_date(filename: str):
+    """Converts a date string in the 'YYYY-mm-dd' format into the 'mm-dd-YYYY' format, which is used in most date processing.
+
+    Args:
+        filename (str): A date in the 'YYYY-mm-dd' format to be converted.
+
+    Returns:
+        str: A string in the 'mm-dd-YYYY' format.
+    """
     filename_array = re.split(r'[\s|-]', filename) # Expecting YYYY-MM-DD
     try:
         assert len(filename_array) == 3
@@ -46,13 +61,20 @@ def filename_to_date(filename: str):
     except AssertionError:
         logging.error('Error while converting filename to date form.')
         print('Error while converting filename to date form.')
-    
 
 ###################################
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def generate_random_date(seed):
+def generate_random_date(seed: int):
+    """Generates a random date based off the input 'seed' parameter.
+
+    Args:
+        seed (int): A number to influence the random date that is picked.
+
+    Returns:
+        str: A random date in the format of 'mm-dd-YYYY'.
+    """
     random.seed(seed)
     d = random.randint(1, seed)
     random_date = datetime.fromtimestamp(d).strftime('%m-%d-') + '2024'
@@ -64,7 +86,19 @@ def generate_random_date(seed):
 ###################################
 
 def get_starting_date(use_today: bool, specific_date=''):
-    if not (specific_date == ''):
+    """Gets a date. This date should be in the form of 'mm-dd-YYYY'.
+       If 'use_today' is set to True, the current real date is returned.
+       If 'use_today' is set to False, a date will be generated based on a random seed.
+       If 'specific_date' is set, this function will return the exact string passed in. [Mainly for debugging - Date format is not validated]
+
+    Args:
+        use_today (bool): Determines whether Today's date is used or if a random date should be picked.
+        specific_date (str, optional): A debug parameter for testing against a specific date. Defaults to ''.
+
+    Returns:
+        str: A date in the form of 'mm-dd-YYYY'.
+    """
+    if specific_date != '':
         print('Specific Date: {sDate}'.format(sDate=specific_date))
         return specific_date
     else:
@@ -74,9 +108,14 @@ def get_starting_date(use_today: bool, specific_date=''):
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def get_image_files(date_folder: str):
-    if (os.path.isdir(date_folder)):
-        files = os.listdir(date_folder)
+def get_image_files(folder: str):
+    """Gets a list of full paths for all image files that end with '.jpeg' and '.png' within the 'folder' parameter.
+
+    Args:
+        folder (str): A full path to a folder to search for image files within.
+    """
+    if (os.path.isdir(folder)):
+        files = os.listdir(folder)
         for file in files:
             if file.endswith(".jpeg") or file.endswith(".png"):
                 #print(file)
@@ -87,6 +126,11 @@ def get_image_files(date_folder: str):
 ###################################
 
 def create_folder_if_needed(location: str):
+    """Checks to see if 'location' exists. If it does not, it will create a directory there.
+
+    Args:
+        location (str): A path to check for/create a directory at.
+    """
     if not os.path.exists(location):
         os.makedirs(location)
 
@@ -94,9 +138,18 @@ def create_folder_if_needed(location: str):
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def find_folders_with_substring(substr: str):
+def find_folders_with_substring(search_path: str, substr: str):
+    """Finds and returns the full path of all folders within 'search_path' that match the 'substr' parameter.
+
+    Args:
+        search_path (str): The directory to search in.
+        substr (str): The substring to look for in the name of each child directory.
+
+    Returns:
+        list[str]: A list of directory paths that contain the 'substr' substring.
+    """
     all_matching_folders: list[str] = []
-    for root, dirs, files in os.walk(defs.history_folder):
+    for root, dirs, files in os.walk(search_path):
         for name in dirs:
             if substr in name:
                 all_matching_folders.append(name)
@@ -107,6 +160,8 @@ def find_folders_with_substring(substr: str):
 ###################################
 
 async def post_to_twitter():
+    """TODO: Under development
+    """
     # At this point, we must determine if the folder we want to post has all the necessary items to post to twitter.
     # If it does not, do we try generating one more time? Probably not
     print('post to twitter')
@@ -116,6 +171,13 @@ async def post_to_twitter():
 ###################################
 
 async def start():
+    """The entry point of the image/text generation process.
+    - Creates generation folders if necessary.
+    - Checks for a notable holiday being celebrated today, prioritizing specific countries.
+    - Launches post generation sequence with the goal of generating 1-4 images and a suitable social media status message. If either of these cannot
+      be validated, then the post generation sequence will retry for a number of attempts. A holiday post can only be on attempt 1, otherwise it will
+      try a different post type.
+    """
     create_folder_if_needed(defs.history_folder)
     create_folder_if_needed(defs.archive_folder)
     selected_date = get_starting_date(use_today=False, specific_date='1-22-2024') # specific_date used for debugging #6-18-2024 / Abrahamic
@@ -135,7 +197,7 @@ async def start():
         date_folder = '{base}_{uuid}'.format(base=date_folder_base, uuid=current_uuid)
         
         # If a folder already exists, archive it and remove the original
-        existing_dirs = find_folders_with_substring(date_file_name)
+        existing_dirs = find_folders_with_substring(search_path=defs.history_folder, substr=date_file_name)
         for dir in existing_dirs:
             current_loc = os.path.join(defs.history_folder, dir)
             current_loc_files = [f for f in os.listdir(current_loc) if os.path.isfile(os.path.join(current_loc, f))]
@@ -184,7 +246,16 @@ async def start():
 #:::::::::::::::::::::::::::::::::#
 ###################################
             
-async def start_time_loop(chrome_driver_loc, firefox_driver_loc):
+async def start_time_loop():
+    """Starts the persistent loop process. This loop will countdown in the console for 10 minutes before processing the current time.
+    If the day changes, two processes must be scheduled.
+    1. The [AI Prompt building] image/text generation process
+    2. The [Twitter / X] upload process
+    These two processes will trigger at different times to ensure prior post generation was successful.
+
+    If 'debug' was included as the first runtime argument, the loop will not start. Instead, the post generation process will begin
+    and the program will end once completed. The upload process is ignored.
+    """
     counter = itertools.count()
     seconds_in_a_minute = 60
     seconds_in_an_hour = 60 * seconds_in_a_minute
