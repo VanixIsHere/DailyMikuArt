@@ -11,6 +11,8 @@ MajorCountries = ['JP', 'US', 'GB', 'KR']
 MinorCountries = ['AU', 'BE', 'BR', 'CA', 'CN', 'DE', 'DK', 'EG', 'ES', 'FR', 'HK', 'IE', 'IN', 'MX', 'NL', 'NO', 'NZ', 'SE', 'SG', 'TH', 'TW', 'UA', 'WS']
 AllWeightedCountries = MajorCountries + MinorCountries
 
+TwitterPostLength = 280
+
 PostType = Enum('PostType', ['HOLIDAY', 'RANDOM', 'WEATHER', 'SPORTS'])
 DayType = Enum('DayType', ['HOLIDAY', 'BIRTHDAY'])
 

@@ -11,79 +11,6 @@ from .. import defs
 #:::::::::::::::::::::::::::::::::#
 ###################################
 
-def generate_social_media_post(art_prompt: str, location: str, item: str):
-    system_context = "You are a generating entity capable of converting art prompts into personable Twitter posts."
-
-    messages = [{
-        "role": "system",
-        "content": system_context,
-    }, {
-        "role": "assistant",
-        "content": art_prompt,
-    }]
-
-    output = gpt.handle_response(
-        messages,
-        gpt.new_user_message("""You are now Hatsune Miku, a 16 year old girl and hugely famous virtual pop idol. Given the previous art prompt you just gave me, I want you to generate a twitter post.
-                         I want you to IGNORE THE FIRST SENTENCE of the previous art prompt that starts with "Generate art of".
-                         The twitter post can be no longer than 280 characters. You, as Hatsune Miku, should describe what you did today based on the previous prompt.
-                         Remember, you spent the day at {location} with your item "{item}". Get related context from the previous art prompt to know how you used your item in the location.
-                         Try to recognize the emotion that you felt based on whether the words used are positive or negative.
-                         Interpret the emotions that Miku might have felt to influence the type of events that happened to you while there, BUT do not talk about your mood or emotions.
-                         You can make up events that happened to you while doing this. Be realistic.
-                         Do NOT use adverbs. Do NOT copy the previous art prompt word for word.
-                         Do NOT write in a superfluous way. Write it like a senior level college essay style.
-                         You MUST be Hatsune Miku and describe your day as the scene depicts.
-                         Any twitter hashtags should be related to the post.
-                         Include a couple emojis that are relevant.
-                         The twitter post should end with an appropriate japanese sentence.""".format(location=location, item=item))    
-    )
-    
-    print('TWITTER', output['response'] or 'No Response?')
-    logging.info('Twitter post: {}'.format(output['response']))
-
-    return output
-
-###################################
-#:::::::::::::::::::::::::::::::::#
-###################################
-
-def generate_prompt_for_stability(location: str, item: str):
-    system_context = "You are a prompt generating entity tasked with outputting ONLY the requested prompt."
-    initial_word_generation_instruction = """
-    I would like you to generate me a prompt. This prompt is intended for generative art AI models, and as such should begin with our protagonist Hatsune Miku.
-    The start of the prompt should begin with "Generate art of Hatsune Miku" and specify the art style of the generation to be something like "{art_style}". From there, I need a description of Miku spending her time at this specified location: "{location}".
-    Make sure describe this location with information about the surrounding area that should be visible from a still shot image. Ask yourself, "would other people accompany her in this place or is it likely that she would be alone?".
-    If you determine she is alone, do not specify anything. If people are nearby, make sure that use one or more demonyms to describe their origin.
-    The following object should be integrated into the scene: "{item}". Describe the still shot image by explaining what Miku is doing with this object using an action verb. The {item} object and what Miku is doing with it should be a priority.
-    If the item is a food, she should be eating it. If the item is a wearable article, she should be wearing it. Other types of items should be interacted with appropriately. The item SHOULD BE HERS.
-    Miku can optionally have an emotional expression drawn in response to the object.
-    Ask yourself "given the combination of location and object, should the whole scene be positive, negative or neutral in tone?". Use this answer to reflect the scene better.
-    Ask yourself "given this situation, should Miku be doing a physical movement or standing staticly?" Integrate that answer into the description of the prompt.
-    Make sure to include a description of her clothing. For example, if it is cold then her clothing should be something cozier.
-    Lastly, take note to describe some of the details of the scene, such as the lighting conditions, weather conditions, or the time of day and how it is affecting the objects in the scene.
-    REMEMBER, since this scene is for art generation, I NEED this description to reflect a static place in time. Miku is only in one place doing one thing.
-    Do NOT write in a superfluous way. Write it like a senior level college essay style.
-    The output MUST be 10 sentences long.
-    """.format(location=location, item=item, art_style=gpt.get_random_visual_art_prompt_intro(force_style=None))
-    messages = [{
-        "role": "system",
-        "content": system_context,
-    }]
-    
-    # output.history / output.response
-    output = gpt.handle_response(
-        messages,
-        gpt.new_user_message(initial_word_generation_instruction)
-    )
-    
-    print('OUTPUT', output['response'])
-    return output
-
-###################################
-#:::::::::::::::::::::::::::::::::#
-###################################
-
 def add_context_to_prompt_item(props: defs.PostProps, location_type: str, location: str, item_type: str, item: str):
     context: list[str] = []
     if item_type == 'Food':
@@ -144,13 +71,18 @@ def generate_post_data(props: defs.PostProps, location_type: str, location: str,
     system_context = """Hatsune Miku is a 16 year old pop idol Vocaloid who is loved worldwide for her youthful energy, innocence, and boundless creativity.
                     She exudes a cheerful and playful demeanor, often depicted with a smile on her face and a twinkle in her eyes.
                     Miku's character is imbued with a sense of curiosity and wonder, reflecting the limitless possibilities of the digital world she inhabits.
-                    Despite being a virtual entity, she connects with fans on a personal level, encouraging them to explore their own creativity and express themselves freely.
+                    Despite being a virtual entity, she connects with fans on a personal level.
                     Miku's persona radiates positivity and optimism, serving as a beacon of inspiration for fans worldwide.
+                    
+                    Use this voice: casual, friendly, and storytelling.
+                    Use this tone: conversational and slightly descriptive. 
+                    Use this style: informal.
                     
                     YOU are Hatsune Miku. You are on your continuous worldwide travel and are writing about your travels in the form of an informative blog post, written in a non-superfluous, college writing level.
                     Keep it professional and answer in plain English. Get straight to the point as if the writing was from Wikipedia.
                     The two most important aspects of each entry is the location you are visiting and an item. The location and item will be will be provided to you, along with suggestions on how to integrate the item into your blog post.
                     Use any additional context to decide on a creative outcome for your blog post.
+                    Do NOT include any newline characters in any responses you give.
                     """
     messages = [{
         "role": "system",
@@ -172,7 +104,7 @@ def generate_post_data(props: defs.PostProps, location_type: str, location: str,
     messages.append(gpt.new_assistant_message(output['response']))
     
     prompts = []
-    prompts.append(f"""Turn this blog post into a twitter post. Ensure the length of the post is less than 280 characters.
+    prompts.append(f"""Turn this blog post into a twitter post. Ensure the length of the post is less than {defs.TwitterPostLength} characters.
                    The post should end with a relevant japanese sentence.
                    Include appropriate emojis that make sense.
                    When calculating the length of the twitter post, emojis and japanese characters count as 2 instead of 1.
@@ -219,9 +151,16 @@ def generate_post(props: defs.PostProps):
         with open(items_file, 'r', encoding='UTF-8') as item_f:
             locations_dict: Dict[str, str] = json.load(location_f)
             items_dict: Dict[str, str] = json.load(item_f)
-            random_item_type = random.choice(items_dict)
+            
+            def get_list_count(n):
+                return len(n['list'])
+            
+            item_type_weights = list(map(get_list_count, items_dict))
+            random_item_type = random.choices(items_dict, item_type_weights, k=1)[0]
             random_item = random.choice(random_item_type['list'])
-            random_loc_type = random.choice(locations_dict)
+            
+            loc_type_weights = list(map(get_list_count, locations_dict))
+            random_loc_type = random.choices(locations_dict, loc_type_weights, k=1)[0]
             random_loc = random.choice(random_loc_type['list'])
             print("{} : {}".format(random_item, random_loc))
             data = generate_post_data(props, random_loc_type, random_loc, random_item_type, random_item)

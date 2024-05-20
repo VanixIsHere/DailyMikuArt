@@ -31,14 +31,14 @@ def inscribe_text_on_images(props: defs.PostProps, text: str, image_file_list: l
             with open(font_loc, 'rb') as font:
                 fnt = ImageFont.truetype(font=font, size=font_size, encoding='unic')
                 # Render wider black text to give the illusion of a border
-                I1.text((x-1, y-1), '{date}  @DailyMikuArt'.format(date=props.date), fill=(0, 0, 0), font=fnt)
-                I1.text((x+1, y-1), '{date}  @DailyMikuArt'.format(date=props.date), fill=(0, 0, 0), font=fnt)
-                I1.text((x-1, y+1), '{date}  @DailyMikuArt'.format(date=props.date), fill=(0, 0, 0), font=fnt)
-                I1.text((x+1, y+1), '{date}  @DailyMikuArt'.format(date=props.date), fill=(0, 0, 0), font=fnt)
-                I1.text((x-1, y-1 + extra_y), text, fill=(0, 0, 0), font=fnt)
-                I1.text((x+1, y-1 + extra_y), text, fill=(0, 0, 0), font=fnt)
-                I1.text((x-1, y+1 + extra_y), text, fill=(0, 0, 0), font=fnt)
-                I1.text((x+1, y+1 + extra_y), text, fill=(0, 0, 0), font=fnt)
+                I1.text((x-1, y-1), '{date}  @DailyMikuArt'.format(date=props.date), fill=(0, 0, 0, 40), font=fnt)
+                I1.text((x+1, y-1), '{date}  @DailyMikuArt'.format(date=props.date), fill=(0, 0, 0, 40), font=fnt)
+                I1.text((x-1, y+1), '{date}  @DailyMikuArt'.format(date=props.date), fill=(0, 0, 0, 40), font=fnt)
+                I1.text((x+1, y+1), '{date}  @DailyMikuArt'.format(date=props.date), fill=(0, 0, 0, 40), font=fnt)
+                I1.text((x-1, y-1 + extra_y), text, fill=(0, 0, 0, 60), font=fnt)
+                I1.text((x+1, y-1 + extra_y), text, fill=(0, 0, 0, 60), font=fnt)
+                I1.text((x-1, y+1 + extra_y), text, fill=(0, 0, 0, 60), font=fnt)
+                I1.text((x+1, y+1 + extra_y), text, fill=(0, 0, 0, 60), font=fnt)
                 # Regular render on top
                 I1.text((x, y), '{date}  @DailyMikuArt'.format(date=props.date), fill=(255, 255, 255), font=fnt)
                 I1.text((x, y + extra_y), text, fill=(255, 255, 255), font=fnt)

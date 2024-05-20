@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import os
+import sys
 import time
 import requests
 from PIL import Image
@@ -41,20 +42,41 @@ def current_seconds_since_epoch():
 ###################################
 
 async def logout_if_needed(driver):
-    try:
-        id_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CLASS_NAME, 'id_button'))
-        )
-        id_button.click()
+    refresh_interval = 5
+    giveup_timeout = 30
+    start_time = time.time()
+    sign_in_popup_open = False
+    while True:
+        try:
+            id_button = WebDriverWait(driver, refresh_interval).until(
+                EC.element_to_be_clickable((By.CLASS_NAME, 'id_button'))
+            )
+            id_button.click()
+            
+            WebDriverWait(driver, refresh_interval).until(
+                EC.visibility_of_element_located((By.CLASS_NAME, 'id_currentAccount'))
+            )
+            sign_in_popup_open = True
+            break
+        except TimeoutException:
+            # This is necessary as there are timing issues with Bing's website and selenium.
+            if time.time() - start_time < giveup_timeout:
+                logging.info('Could not find the logged in user section. Attempting click on user icon again...')
+            else:
+                break
+        except Exception as e:
+            logging.error('An error has occurred while trying to open the user account popup... {error}'.format(error=e))
+            break
         
-        sign_out_button = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.LINK_TEXT, 'Sign out'))
-        )
-        sign_out_button.click()
-        
-    except TimeoutException:
-        logging.info('Not seeing a user logged in... proceeding.')
-        return
+    if sign_in_popup_open:
+        print('User account popup is opened.')
+        try:
+            sign_out_button = WebDriverWait(driver, refresh_interval).until(
+                EC.visibility_of_element_located((By.LINK_TEXT, 'Sign out'))
+            )
+            sign_out_button.click()
+        except TimeoutException:
+            logging.info('Popup is open but cannot find the sign off button... assuming no user is logged in.')
 
 ###################################
 #:::::::::::::::::::::::::::::::::#
@@ -66,44 +88,67 @@ async def login_to_bing(driver):
     
     await logout_if_needed(driver)
     
-    ## Click on the user icon at the top of the page.
-    sign_in_link = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CLASS_NAME, 'id_button'))
-    )
-    sign_in_link.click()
     
+    refresh_interval = 3
+    giveup_timeout = 15
+    start_time = time.time()
+    sign_in_popup_open = False
+    while True:
+        try:
+            id_button = WebDriverWait(driver, refresh_interval).until(
+                EC.element_to_be_clickable((By.CLASS_NAME, 'id_button'))
+            )
+            id_button.click()
+            
+            WebDriverWait(driver, refresh_interval).until(
+                EC.visibility_of_element_located((By.CLASS_NAME, 'id_currentAccount'))
+            )
+            sign_in_popup_open = True
+            break
+        except TimeoutException:
+            if time.time() - start_time < giveup_timeout:
+                print('Timeout reached while trying to navigate to the sign in page. Trying again...')
+                logging.info('Timeout reached while trying to navigate to the sign in page. Trying again...')
+            else:
+                print('Could not properly navigate to the sign in page.')
+                logging.error('Could not properly navigate to the sign in page.')
+                break
+        except Exception as e:
+            logging.error('An error has occurred while trying to navigate to the sign in page... {error}'.format(error=e))
+            break
+    
+    if sign_in_popup_open:
+        print('User account popup is opened.')
+        ## Click on the 'Sign in with a personal account' button.
+        accountItem = WebDriverWait(driver, refresh_interval).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, 'id_accountItem'))
+        )
+        accountItem.click()
 
-    ## Click on the 'Sign in with a personal account' button.
-    accountItem = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CLASS_NAME, 'id_accountItem'))
-    )
-    accountItem.click()
-    
-
-    ## Enter username/email
-    email_input = WebDriverWait(driver, 10).until(
-        EC.visibility_of_element_located((By.NAME, 'loginfmt'))
-    )
-    email_input.send_keys(envkey.BINGUSER)
-    email_input.send_keys(Keys.ENTER)
-    
-    ## Enter password
-    password_input = WebDriverWait(driver, 10).until(
-        EC.visibility_of_element_located((By.NAME, 'passwd'))
-    )
-    password_input.send_keys(envkey.BINGPASS)
-    password_input.send_keys(Keys.RETURN)
-    
-    ## Decline 'stay signed in?' prompt.
-    decline_stay_signed_in = WebDriverWait(driver, 10).until(
-        EC.visibility_of_element_located((By.ID, 'declineButton'))
-    )
-    decline_stay_signed_in.send_keys(Keys.ENTER)
-    
-    ## Confirm we are logged in as Miku - technically this is the first name of the outlook account.
-    WebDriverWait(driver, 10).until(
-        EC.visibility_of_element_located((By.XPATH, '//*[@title="{}"]'.format(envkey.BINGNAME)))
-    )
+        ## Enter username/email
+        email_input = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.NAME, 'loginfmt'))
+        )
+        email_input.send_keys(envkey.BINGUSER)
+        email_input.send_keys(Keys.ENTER)
+        
+        ## Enter password
+        password_input = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.NAME, 'passwd'))
+        )
+        password_input.send_keys(envkey.BINGPASS)
+        password_input.send_keys(Keys.RETURN)
+        
+        ## Decline 'stay signed in?' prompt.
+        decline_stay_signed_in = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.ID, 'declineButton'))
+        )
+        decline_stay_signed_in.send_keys(Keys.ENTER)
+        
+        ## Confirm we are logged in as Miku - technically this is the first name of the outlook account.
+        WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, '//*[@title="{}"]'.format(envkey.BINGNAME)))
+        )
     
 ###################################
 #:::::::::::::::::::::::::::::::::#

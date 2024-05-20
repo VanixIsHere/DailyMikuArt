@@ -1,15 +1,17 @@
-from functools import reduce
-import random
-import country_converter as coco
-import json
+
+import sys
 from .. import defs
+from .. import gptutils as gpt
 from ..gptutils import get_random_visual_art_prompt_intro
 from datetime import datetime
-from typing import Dict, Optional
+from functools import reduce
 from pathlib import Path
-import logging
-
+from typing import Dict, Optional
+import country_converter as coco
 import holidays
+import json
+import logging
+import random
 
 ###################################
 #:::::::::::::::::::::::::::::::::#
@@ -189,17 +191,69 @@ def generate_post(props: defs.PostProps):
         celebrate_with = ' and '.join(country_list)
     else:
         celebrate_with = '{}'.format(country_list[0])
-    main_prompt_action = 'celebrating {holiday_name} with {celebrate_with}.'.format(holiday_name=holiday[0], celebrate_with=celebrate_with)
+        
+    system_context = """Hatsune Miku is a 16 year old pop idol Vocaloid who is loved worldwide for her youthful energy, innocence, and boundless creativity.
+                    She exudes a cheerful and playful demeanor, often depicted with a smile on her face and a twinkle in her eyes.
+                    Miku's character is imbued with a sense of curiosity and wonder, reflecting the limitless possibilities of the digital world she inhabits.
+                    Despite being a virtual entity, she connects with fans on a personal level.
+                    Miku's persona radiates positivity and optimism, serving as a beacon of inspiration for fans worldwide.
+                    
+                    YOU are Hatsune Miku. You are on your continuous worldwide travel and are writing about your travels in the form of an informative blog post, written in a non-superfluous, college writing level.
+                    Keep it professional and answer in plain English. Get straight to the point as if the writing was from Wikipedia.
+                    Today's date is a holiday which will be provided to you by the user. Miku's blog post will be about her day celebrating this holiday with the groups of people and countries that typically celebrate it.
+                    Pick a location at random in a place that celebrates this holiday. This can be a city or another notable place of celebration.
+                    For example, some holidays such as Easter or Christmas are family oriented, so she would spend time with her family or Miku would be invited to celebrate with a host family.
+                    Her post should include an event involved with the holiday and how she participated.
+                    Ensure that the post captures the vibes of the holiday. Some holidays are purely for fun and people do not follow their cultural history.
+                    Miku SHOULD be extremely aware of cultural norms, such as not eating pork in various abrahamic religions. She should avoid doing the wrong thing.
+                    Use any additional context to decide on a creative outcome for your blog post.
+                    Do NOT include any newline characters in any responses you give.
+                    """
+    messages = [{
+        "role": "system",
+        "content": system_context,
+    }]
     
-    social_media_prompt = modify_prompt_for_social_media('Generate a twitter post by Hatsune Miku where she is {}'.format(main_prompt_action), holiday)
-    logging.info('Social media prompt generated: "{prompt}"'.format(prompt=social_media_prompt))
+    prompts = []
+    prompts.append(f"I would like you to generate me a one paragraph long blog post on your celebration of '{holiday[0]}' with {celebrate_with}.")
+    output = gpt.handle_response(
+        messages,
+        gpt.new_user_message(' '.join(prompts))
+    )
+    print(output['response'])
+    messages.append(gpt.new_assistant_message(output['response']))
+    
+    prompts = []
+    prompts.append(f"""Turn this blog post into a twitter post. Ensure the length of the post is less than {defs.TwitterPostLength} characters.
+                   The post should end with a relevant japanese sentence.
+                   Include appropriate emojis that make sense.
+                   When calculating the length of the twitter post, emojis and japanese characters count as 2 instead of 1.
+                   """)
+    social_media_text = gpt.handle_response(
+        messages,
+        gpt.new_user_message(' '.join(prompts))
+    )
+    print(social_media_text['response'])
+    messages.append(gpt.new_assistant_message(output['response']))
+    
+    art_style = gpt.get_random_visual_art_prompt_intro(force_style=None)
+    prompts = []
+    prompts.append(f"""You are no longer Hatsune Miku. You are a prompt generating entity useful for describing imagery intended for generative art AI.
+                   I now need you to generate an art prompt beginning with an imperative sentence and the style described as '{art_style}'.
+                   You MUST make sure this prompt is not longer than 480 characters. Shorten the prompt and make it concise in order to get to this goal.
+                   The remainder of the art prompt needs to be a description of a still image based the previous responses you gave me.
+                   Hatsune Miku just spent the day celebrating {holiday[0]} and partook in traditions. Take this interaction and describe it as if it were a still frame in time.
+                   It being a still frame should not be stated in the text.
+                   Keep it professional but answer in plain English. Get straight to the point. Don't be superfluous and mention how things are symbolized.
+                   To properly describe the tone you can describe the weather and the way certain lights illuminate parts of the scene.
+                   """)
+    art_prompt = gpt.handle_response(
+        messages,
+        gpt.new_user_message(' '.join(prompts))
+    )
+    print(art_prompt['response'])
 
-    # Forcing Holiday Posts to adopt 'Studio Art' styles all the time because they are they are the least problematic outcomes. Can't be celebrating post-apocalyptic Easter Sunday, ya know?
-    dalle_prompt = modify_prompt_for_art_generation('{introprompt} {mainprompt}'.format(introprompt=get_random_visual_art_prompt_intro(force_style=None), mainprompt=main_prompt_action), holiday)
-    logging.info('Art generation prompt generated: "{prompt}"'.format(prompt=dalle_prompt))
-    
     inscribed_text = 'Celebrating {}'.format(holiday[0])
 
-    data = defs.PostData(socialMediaPrompt=social_media_prompt, artPrompt=dalle_prompt, inscribedText=inscribed_text)
-    print (data)
+    data = defs.PostData(socialMediaPrompt=social_media_text['response'], artPrompt=art_prompt['response'], inscribedText=inscribed_text)
     return data

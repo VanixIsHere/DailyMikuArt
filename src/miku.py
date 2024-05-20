@@ -180,7 +180,7 @@ async def start():
     """
     create_folder_if_needed(defs.history_folder)
     create_folder_if_needed(defs.archive_folder)
-    selected_date = get_starting_date(use_today=False, specific_date='1-22-2024') # specific_date used for debugging #6-18-2024 / Abrahamic
+    selected_date = get_starting_date(use_today=False, specific_date='') # specific_date used for debugging #6-18-2024 / Abrahamic
     date_file_name = date_to_filename(selected_date)
     date_folder_base = os.path.join(defs.history_folder, date_file_name)
     
